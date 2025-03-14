@@ -19,7 +19,9 @@ connectDB();
 // Enable CORS for all origins and methods
 // app.use(cors());
 //# this is for production
-const allowedOrigins = [
+const allowedOrigins =
+  [
+    "https://heartfelt-dolphin-732aa6.netlify.app",
   "https://auto-paper.netlify.app", // Deployed host
   "http://localhost:5173", // Local development
 ];
