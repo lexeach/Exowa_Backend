@@ -114,6 +114,7 @@ const getGenerateQuestion = async ({
   no_of_question,
 }) => {
   try {
+    console.log("Its called Get Generated Questions :",);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     console.log("Google Generative AI initialized  :", genAI);
     
