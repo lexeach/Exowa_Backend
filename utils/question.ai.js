@@ -115,6 +115,7 @@ const getGenerateQuestion = async ({
 }) => {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    console.log("Google Generative AI initialized  :", genAI);
     
     // Break down large question sets into smaller chunks
     const CHUNK_SIZE = 10;
