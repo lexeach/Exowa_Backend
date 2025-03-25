@@ -1,6 +1,5 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY);
-console.log("Google Generative AI initialized":);
 
 const getGenerateQuestion = async ({
   className,
@@ -11,6 +10,8 @@ const getGenerateQuestion = async ({
   language,
   no_of_question,
 }) => {
+console.log("Google Generative AI initialized");
+
   const MAX_RETRIES = 8;
   let retryCount = 0;
   let lastError = null;
