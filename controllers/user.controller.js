@@ -59,7 +59,7 @@ exports.login = async (req, res) => {
         id: user.userid,
         name: user.user_name,
         email: user.user_email,
-        role: 'user', // Adjust if you have roles
+        role: 'parent', // Adjust if you have roles
       },
     });
   } catch (error) {
