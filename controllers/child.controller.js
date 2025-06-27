@@ -18,9 +18,9 @@ exports.createChild = async (req, res) => {
   try {
     // Ensure the parent is authenticated
     const parentId = req.user.id; // Set from auth middleware
-    const parent = await User.findById(parentId);
+    const parent = req.user.role;
 
-    if (!parent || parent.role !== "parent") {
+    if (!parent || parent !== "parent") {
       return res.status(403).json({
         success: false,
         message: "Only parents can create child accounts.",
@@ -58,7 +58,7 @@ exports.createChild = async (req, res) => {
 
 exports.getChildren = async (req, res) => {
   try {
-    const parentId = req.user.id; // Set from auth middleware
+    const parentId = Number(req.user.id); // Set from auth middleware
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const sortField = req.query.sort || "createdAt"; // Default sorting field
@@ -70,7 +70,7 @@ exports.getChildren = async (req, res) => {
     if (searchKey) {
       filter.name = { $regex: searchKey, $options: "i" };
     }
-    const user = await User.findById(parentId);
+    const user = req.user.role;
     if (!user) {
       return successResponse(res, 404, "User not found");
     }
@@ -117,7 +117,7 @@ exports.showChild = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const parentId = req.user.id; // Set from auth middleware
+    const parentId = Number(req.user.id); // Set from auth middleware
     const child = await Children.findOne({
       _id: id,
       parent: parentId,
@@ -138,7 +138,7 @@ exports.updateChild = async (req, res) => {
   const { name, age, grade } = req.body;
 
   try {
-    const parentId = req.user.id; // Set from auth middleware
+    const parentId = Number(req.user.id); // Set from auth middleware
 
     const child = await Children.findOneAndUpdate(
       { _id: id, parent: parentId },
@@ -153,7 +153,7 @@ exports.updateChild = async (req, res) => {
     return successResponse(res, 200, "Child updated successfully", child);
   } catch (error) {
     return errorResponse(res, error);
-  }
+  } 
 };
 
 exports.deleteChild = async (req, res) => {

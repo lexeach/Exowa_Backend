@@ -48,7 +48,7 @@ exports.createPaper = async (req, res) => {
 
   const userId = req.user.id; // Set from auth middleware
   const filePath = req.file ? req.file.path : null; // File path from multer
-
+//	const filePath = "https://myreview.website/Exowa_Frontend_New-main/"; // File path from multer
   try {
 
 
@@ -63,7 +63,6 @@ exports.createPaper = async (req, res) => {
     });
 
     const otp = Math.floor(10000 + Math.random() * 90000) //generateOTP(5);
-
     const payload = {
       className,
       subject,
@@ -71,8 +70,8 @@ exports.createPaper = async (req, res) => {
       chapter_from,
       chapter_to,
       language,
-      author: userId,
-      authorId: userId,
+      author: Number(userId),
+      authorId: Number(userId),
       file: filePath,
       questions: generatedPapers,
       otp,
@@ -82,9 +81,10 @@ exports.createPaper = async (req, res) => {
     await paper.save();
     return successResponse(res, 201, "Paper created successfully ", paper);
   } catch (error) {
+	  console.log(error);
     error.message ="Server is Busy Please Try Again Later, Thanks"
     return errorResponse(res, error);
-  }
+  } 
 };
 
 exports.generateQuestionOTP = async (req, res) => {
@@ -138,13 +138,14 @@ exports.getPapers = async (req, res) => {
     const searchKey = (req.query.search || "").trim();
 
     const userId = req.user.id; // Assuming `id` is available on `req.user`
-    const user = await User.findById(userId);
+	const user = userId;
+   //const user = await User.findById(userId);
     const filter = { isDeleted: false };
     if (!user) {
       return successResponse(res, 404, "User not found");
     }
     // Add role-based filtering
-    if (user.role === "parent") {
+    if (req.user.role === "parent") {
       filter.authorId = userId;
     }
 
@@ -228,6 +229,7 @@ exports.getPapers = async (req, res) => {
 // };
 exports.showPaper = async (req, res) => {
   const { id } = req.params;
+  console.log(id, "showpaper");
   try {
     // Find the paper by ID and populate the author details
     const paper = await Paper.findById(id)
@@ -242,6 +244,7 @@ exports.showPaper = async (req, res) => {
     return successResponse(res, 200, "Paper fetched successfully", paper);
   } catch (error) {
     // Handle any server-side errors
+	console.log(error);
     return errorResponse(res, error);
   }
 };
@@ -285,18 +288,19 @@ exports.deletePaper = async (req, res) => {
 
 // Controller to handle the answer logic
 exports.questionAnswer = async (req, res) => {
-  try {
+  //try {
     // Extract query and body parameters
     const { questionId, answers, userId } = req.body;
-    // const childId = req.user.id;
+    //const childId = Number(req.user.id);
+	console.log(questionId, answers, userId, "questionAnswer");
     // Validate if the paper exists
     const paper = await Paper.findById(questionId);
 
     if (!paper) return customErrorResponse(res, 400, "Invalid Paper");
     // Validate if the user exists
-    const parent = await User.findById(userId);
+    const parent = true;;
 
-    if (!parent) return customErrorResponse(res, 400, "Invalid Parent");
+   // if (!parent) return customErrorResponse(res, 400, "Invalid Parent");
     // Validate OTP
     // if (paper.otp !== Number(otp))
     //   customErrorResponse(res, 400, "Invalid OTP or Expired");
@@ -314,39 +318,42 @@ exports.questionAnswer = async (req, res) => {
       "Paper updated successfully ",
       updatedPaper
     );
-  } catch (error) {
+  /*} catch (error) {
+	  console.log(error);
     return errorResponse(res, error);
-  }
+  } */
 };
 
 exports.getChildrenLogin = async (req, res) => {
   try {
     const { id } = req.params;
-    const { parentId, questionId, otp } = req.body;
+    //const { parentId, questionId, otp } = req.body;
+	const { questionId, otp } = req.body;
+	console.log(questionId, otp, id, "childlogin");
 
     // Validate input
-    if (!id || !parentId || !questionId || !otp) {
+    if (!id || !questionId || !otp) {
       return res.status(400).json({ message: "Missing required fields." });
     }
 
     const child = await Children.findOne({
       _id: id,
     });
-
+	console.log(child,"childchildchild");
     if (!child) {
       return res.status(400).json({ message: "Child not found." });
     }
 
     // Fetch the question and parent details
     const question = await Paper.findById(questionId);
-    const parent = await User.findById(parentId);
+    //const parent = req.user.role;
 
     if (!question) {
       return res.status(404).json({ message: "Question not found." });
     }
-    if (!parent) {
+    /*if (!parent) {
       return res.status(404).json({ message: "Parent not found." });
-    }
+    } */
     // Validate OTP and IDs
     if (question.otp !== Number(otp)) {
       return res.status(400).json({ message: "Invalid or expired OTP." });
@@ -372,7 +379,7 @@ exports.getChildrenLogin = async (req, res) => {
   } catch (error) {
     // Handle any server-side errors
     return errorResponse(res, error);
-  }
+  }  
 };
 
 exports.questionAssign = async (req, res) => {
@@ -390,7 +397,7 @@ exports.questionAssign = async (req, res) => {
     //   return customErrorResponse(res, 400, "Paper already assigned to a child");
 
     // Validate if the user exists
-    const parent = await User.findById(userId);
+    const parent = req.user.role;
     if (!parent) return customErrorResponse(res, 400, "Invalid Parent");
 
     const child = await Children.findById(childId);

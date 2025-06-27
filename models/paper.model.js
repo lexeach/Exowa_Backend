@@ -9,9 +9,7 @@ const paperSchema = new mongoose.Schema(
     language: { type: String },
     authorId: { type: String },
     author: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
+      type: String, required: true,
     },
     file: { type: String },
     questions: { type: [Object], default: [] }, // Supports different data structures

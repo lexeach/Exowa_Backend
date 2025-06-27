@@ -31,7 +31,7 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
-  try {
+  try { console.log("login");
     // Send credentials directly to external API
     const response = await axios.post('https://apic.myreview.website:8453/api/admin/users_withPass', {
       userid: email,
@@ -49,16 +49,17 @@ exports.login = async (req, res) => {
     if (!user || user.length === 0) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
+	console.log(user[0].userid);
 
     // Assuming the API validates the password and returns user info
-    const token = jwt.sign({ id: user.userid, email: user.user_email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ id: user[0].userid, email: user[0].user_email, role: user[0].user_role }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
     res.status(200).json({
       token,
       user: {
-        id: user.userid,
-        name: user.user_name,
-        email: user.user_email,
+        id: user[0].userid,
+        name: user[0].user_name,
+        email: user[0].user_email,
         role: 'parent', // Adjust if you have roles
       },
     });
