@@ -52,7 +52,7 @@ exports.login = async (req, res) => {
 	console.log(user[0].userid);
 
     // Assuming the API validates the password and returns user info
-    const token = jwt.sign({ id: user[0].userid, email: user[0].user_email, role: user[0].user_role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ id: user[0].userid, email: user[0].user_email, role: user[0].user_role, childnumber: user[0].child_limit }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
     res.status(200).json({
       token,
@@ -60,7 +60,8 @@ exports.login = async (req, res) => {
         id: user[0].userid,
         name: user[0].user_name,
         email: user[0].user_email,
-        role: 'parent', // Adjust if you have roles
+        role: user[0].user_role, // Adjust if you have roles
+		
       },
     });
   } catch (error) {

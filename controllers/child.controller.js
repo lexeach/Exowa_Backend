@@ -26,7 +26,19 @@ exports.createChild = async (req, res) => {
         message: "Only parents can create child accounts.",
       });
     }
-
+	const page = 1;
+    const limit = 10;
+    const sortField = "createdAt"; // Default sorting field
+    const sortOrder =  1;
+	const filter = { parent: parentId };
+	const childs = await Children.find(filter).populate("parent", "name email");
+	console.log(req.user.childnumber, "childs length");
+	if (childs.length>= req.user.childnumber) {
+      return res.status(403).json({
+        success: false,
+        message: "Your create child limit is over.",
+      });
+    }
     // Create the child user
     const child = new Children({
       name,
@@ -75,7 +87,7 @@ exports.getChildren = async (req, res) => {
       return successResponse(res, 404, "User not found");
     }
     // Add role-based filtering
-    if (user.role === "parent") {
+    if (user === "parent") {
       filter.parent = parentId
     }
 
@@ -122,7 +134,7 @@ exports.showChild = async (req, res) => {
       _id: id,
       parent: parentId,
     });
-
+console.log(child);
     if (!child) {
       return successResponse(res, 404, "Child not found");
     }
