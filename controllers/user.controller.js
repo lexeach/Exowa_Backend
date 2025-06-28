@@ -18,7 +18,7 @@ exports.register = async (req, res) => {
 
     const user = new User({ name, email, password: hashedPassword });
 
-    if (email === "admin@exam.com") {
+    if (userid === "1001") {
       user.role = "admin";
     }
     await user.save();
