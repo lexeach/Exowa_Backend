@@ -132,9 +132,9 @@ exports.showChild = async (req, res) => {
     const parentId = Number(req.user.id); // Set from auth middleware
     const child = await Children.findOne({
       _id: id,
-      parent: parentId,
+    //  parent: parentId,
     });
-console.log(child);
+console.log(child,"childchildchild");
     if (!child) {
       return successResponse(res, 404, "Child not found");
     }
@@ -150,6 +150,13 @@ exports.updateChild = async (req, res) => {
   const { name, age, grade } = req.body;
 
   try {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const startDate = new Date(`${currentYear}-04-01`); // April 1st
+    const endDate = new Date(`${currentYear}-05-30T23:59:59`); // May 30th end of day
+    if (today < startDate || today > endDate) {
+      return successResponse(res, 403, "Updates are only allowed from April 1st to May 30th.");
+    }
     const parentId = Number(req.user.id); // Set from auth middleware
 
     const child = await Children.findOneAndUpdate(
@@ -170,13 +177,11 @@ exports.updateChild = async (req, res) => {
 
 exports.deleteChild = async (req, res) => {
   const { id } = req.params;
-
   try {
     const parentId = req.user.id; // Set from auth middleware
-
     const child = await Children.findOneAndDelete({
       _id: id,
-      parent: parentId,
+      //parent: parentId,
     });
 
     if (!child) {

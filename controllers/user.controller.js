@@ -18,7 +18,7 @@ exports.register = async (req, res) => {
 
     const user = new User({ name, email, password: hashedPassword });
 
-    if (userid === "984004239100") {
+    if (email === "admin@exam.com") {
       user.role = "admin";
     }
     await user.save();
@@ -31,7 +31,27 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
-  try { console.log("login");
+  try { 
+  if(email === "admin@exam.com"){
+	  const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch)
+      return res.status(400).json({ message: "Invalid credentials" });
+    const token = jwt.sign({ id: user._id, role: user.role, email: user.email }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+    res.status(200).json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  }else{
     // Send credentials directly to external API
     const response = await axios.post('https://apic.myreview.website:8453/api/admin/users_withPass', {
       userid: email,
@@ -64,6 +84,7 @@ exports.login = async (req, res) => {
 		
       },
     });
+  }
   } catch (error) {
     console.error(error.response ? error.response.data : error.message);
 
