@@ -67,7 +67,7 @@ exports.login = async (req, res) => {
     const user = response.data.data;
 
     if (!user || user.length === 0) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: response.data.error });
     }
 	console.log(user[0].userid);
 
