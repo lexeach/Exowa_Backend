@@ -67,7 +67,7 @@ exports.login = async (req, res) => {
     const user = response.data.data;
 
     if (!user || user.length === 0) {
-      return res.status(400).json({ message: response.data.error });
+      return res.status(400).json({ message: response.data.message });
     }
 	console.log(user[0].userid);
 
