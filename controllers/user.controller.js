@@ -53,7 +53,8 @@ exports.login = async (req, res) => {
     });
   }else{
     // Send credentials directly to external API
-    const response = await axios.post('https://apic.myreview.website:8453/api/admin/users_withPass', {
+    //const response = await axios.post('https://apic.myreview.website:8453/api/admin/users_withPass', {
+	const response = await axios.post('https://apic.user.exowa.click:8453/api/admin/users_withPass', {    
       userid: email,
       passwd: password
     }, {
