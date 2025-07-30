@@ -40,12 +40,14 @@ const getGenerateQuestion = async ({
           "A": "Option A text",
           "B": "Option B text",
           "C": "Option C text",
-          "D": "Option D text"
+          "D": "Option D text",
+          "E": "I don't know (translate this to ${language})"
         },
-        "correctAnswer": "A" // Must be A, B, C, or D
+        "correctAnswer": "A" // Must be A, B, C, D, or E
       }
     ]
     Do not include any text outside the JSON array. Ensure all questions follow this structure exactly.
+    For option E, translate "I don't know" to the appropriate text in ${language} language.
   `;
 
   while (retryCount < MAX_RETRIES) {
@@ -73,12 +75,12 @@ const getGenerateQuestion = async ({
           typeof question.question === "string" &&
           question.question.trim().length > 0 &&
           typeof question.choices === "object" &&
-          ["A", "B", "C", "D"].every(key => 
+          ["A", "B", "C", "D", "E"].every(key => 
             key in question.choices && 
             typeof question.choices[key] === "string" &&
             question.choices[key].trim().length > 0
           ) &&
-          ["A", "B", "C", "D"].includes(question.correctAnswer)
+          ["A", "B", "C", "D", "E"].includes(question.correctAnswer)
         );
       };
 
@@ -111,6 +113,5 @@ const getGenerateQuestion = async ({
     }
   }
 };
-
 
 module.exports = { getGenerateQuestion };

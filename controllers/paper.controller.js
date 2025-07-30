@@ -227,14 +227,19 @@ exports.getPapers = async (req, res) => {
 //     return errorResponse(res, error);
 //   }
 // };
+// result 
 exports.showPaper = async (req, res) => {
   const { id } = req.params;
-  console.log(id, "showpaper");
   try {
+    console.log('paper details', id);
+    
     // Find the paper by ID and populate the author details
     const paper = await Paper.findById(id)
       .populate("author", "name email")
       .populate("children", "name grade");
+
+      console.log(paper, "paper details");
+      
 
     // If the paper doesn't exist, return a 404 response
     if (!paper) {
@@ -286,13 +291,11 @@ exports.deletePaper = async (req, res) => {
   }
 };
 
-// Controller to handle the answer logic
+// answer the question
 exports.questionAnswer = async (req, res) => {
   //try {
     // Extract query and body parameters
     const { questionId, answers, userId } = req.body;
-    //const childId = Number(req.user.id);
-	console.log(questionId, answers, userId, "questionAnswer");
     // Validate if the paper exists
     const paper = await Paper.findById(questionId);
 
