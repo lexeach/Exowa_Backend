@@ -38,7 +38,7 @@ exports.createPaper = async (req, res) => {
   }
   const {
     //class: className,
-    className,
+    class,
     subject,
     syllabus,
     chapter_from,
