@@ -236,7 +236,7 @@ exports.showPaper = async (req, res) => {
     // Find the paper by ID and populate the author details
     const paper = await Paper.findById(id)
       .populate("author", "name email")
-      .populate("children", "name grade");
+      .populate("children", "name class");
 
       console.log(paper, "paper details");
       
@@ -372,7 +372,7 @@ exports.getChildrenLogin = async (req, res) => {
 
     res.status(200).json({
       token,
-      user: { id: child._id, name: child.name, grade: child.grade },
+      user: { id: child._id, name: child.name, class: child.class },
     });
   } catch (error) {
     // Handle any server-side errors

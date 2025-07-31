@@ -36,7 +36,7 @@ const router = express.Router();
  *             properties:
  *               name:
  *                 type: string
- *                 example: "Grade 10 Curriculum"
+ *                 example: "class 10 Curriculum"
  *             required:
  *               - name
  *     responses:
@@ -144,7 +144,7 @@ router.get("/:id", auth, adminAuth, showSyllabus);
  *             properties:
  *               name:
  *                 type: string
- *                 example: "Updated Grade 10 Curriculum"
+ *                 example: "Updated class 10 Curriculum"
  *             required:
  *               - name
  *     responses:
