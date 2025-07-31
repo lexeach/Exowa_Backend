@@ -303,15 +303,10 @@ exports.questionAnswer = async (req, res) => {
     // Validate if the user exists
     const parent = true;;
 
-   // if (!parent) return customErrorResponse(res, 400, "Invalid Parent");
-    // Validate OTP
-    // if (paper.otp !== Number(otp))
-    //   customErrorResponse(res, 400, "Invalid OTP or Expired");
-
     // Update the paper's answers and reset the OTP
     const updatedPaper = await Paper.findByIdAndUpdate(
       questionId,
-      { answers },
+      { answers, otp: null },
       { new: true }
     );
 
