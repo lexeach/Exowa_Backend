@@ -37,8 +37,7 @@ exports.createPaper = async (req, res) => {
     });
   }
   const {
-    //class: className,
-    class,
+    class: className,
     subject,
     syllabus,
     chapter_from,
