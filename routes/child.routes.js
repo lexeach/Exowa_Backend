@@ -39,13 +39,13 @@ const router = express.Router();
  *               age:
  *                 type: number
  *                 example: 10
- *               class:
+ *               grade:
  *                 type: string
- *                 example: "5th class"
+ *                 example: "5th Grade"
  *             required:
  *               - name
  *               - age
- *               - class
+ *               - grade
  *     responses:
  *       201:
  *         description: Child created successfully
@@ -72,9 +72,9 @@ const router = express.Router();
  *                     age:
  *                       type: number
  *                       example: 10
- *                     class:
+ *                     grade:
  *                       type: string
- *                       example: "5th class"
+ *                       example: "5th Grade"
  *       400:
  *         description: Bad request
  *       401:
@@ -107,9 +107,9 @@ router.post("/", auth, createChild);
  *                   age:
  *                     type: number
  *                     example: 10
- *                   class:
+ *                   grade:
  *                     type: string
- *                     example: "5th class"
+ *                     example: "5th Grade"
  */
 router.get("/", auth, getChildren);
 
@@ -164,13 +164,13 @@ router.get("/:id", auth, showChild);
  *               age:
  *                 type: number
  *                 example: 12
- *               class:
+ *               grade:
  *                 type: string
- *                 example: "6th class"
+ *                 example: "6th Grade"
  *             required:
  *               - name
  *               - age
- *               - class
+ *               - grade
  *     responses:
  *       200:
  *         description: Child updated successfully

@@ -8,12 +8,12 @@ const {
 } = require("../utils/response.dto");
 
 exports.createChild = async (req, res) => {
-  const requiredFields = ["name", "age", "class"]; // Define required fields
+  const requiredFields = ["name", "age", "grade"]; // Define required fields
   // Validate required fields
   const validationError = validateRequiredFields(requiredFields, req.body, res);
   if (validationError) return; // Stop execution if validation fails
 
-  const { name, age, class } = req.body;
+  const { name, age, grade } = req.body;
 
   try {
     // Ensure the parent is authenticated
@@ -43,7 +43,7 @@ exports.createChild = async (req, res) => {
     const child = new Children({
       name,
       age,
-      class,
+      grade,
       parent: parentId, // Link the child to the parent
     });
 
@@ -147,7 +147,7 @@ console.log(child,"childchildchild");
 
 exports.updateChild = async (req, res) => {
   const { id } = req.params;
-  const { name, age, class } = req.body;
+  const { name, age, grade } = req.body;
 
   try {
     const today = new Date();
@@ -161,7 +161,7 @@ exports.updateChild = async (req, res) => {
 
     const child = await Children.findOneAndUpdate(
       { _id: id, parent: parentId },
-      { name, age, class },
+      { name, age, grade },
       { new: true }
     );
 

@@ -4,7 +4,7 @@ const childSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     age: { type: Number, required: true, min: 0 },
-    class: { type: String, required: true },
+    grade: { type: String, required: true },
     isDeleted: { type: Boolean, default: false }, // Soft delete functionality
     parent: {
       type: String, // References the User model
