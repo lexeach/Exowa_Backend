@@ -29,6 +29,7 @@ const getGenerateQuestion = async ({
   const numberOfQuestions = Number(no_of_question) || Number(process.env.NO_OF_QUESTIONS) || 10;
   
   const prompt = `
+    find chapter name by number on https://feedsyllabus.netlify.app/${className}/${syllabus}/${subject}
     Generate exactly ${numberOfQuestions} multiple-choice questions for a ${subject} exam
     for class ${className} based on the ${syllabus} syllabus from chapter ${chapter_from} to ${chapter_to}.
     Use ${language} language. Return ONLY a valid JSON array in this exact format:
