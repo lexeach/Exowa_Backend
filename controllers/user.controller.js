@@ -32,7 +32,10 @@ exports.login = async (req, res) => {
   const { email, password } = req.body;
 
   try { 
-  if(email === "admin@exam.com"){
+  
+    // return 
+  // if(email === "parent1@exam.com"){
+    if(email === "admin@exam.com"){
 	  const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -52,6 +55,8 @@ exports.login = async (req, res) => {
       },
     });
   }else{
+    console.log('email is in else');
+    
     // Send credentials directly to external API
     //const response = await axios.post('https://apic.myreview.website:8453/api/admin/users_withPass', {
 	const response = await axios.post('https://backend.exowa.click/api/admin/users_withPass', {    
@@ -63,6 +68,9 @@ exports.login = async (req, res) => {
         Authorization: 'Bearer test_4NmoG4TVzCWe4Q'
       }
     });
+
+    console.log('response ####', response.data);
+    
 
     // If the API returns user data, login is successful
     const user = response.data.data;

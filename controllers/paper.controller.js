@@ -2,12 +2,13 @@ const jwt = require("jsonwebtoken");
 const Paper = require("../models/paper.model");
 const User = require("../models/user.model");
 const Children = require("../models/child.model");
+const QuestionExplanation = require("../models/questionExplanation.model");
 const {
   successResponse,
   errorResponse,
   customErrorResponse,
 } = require("../utils/response.dto");
-const { getGenerateQuestion } = require("../utils/question.ai");
+const { getGenerateQuestion, generateQuestionExplanation } = require("../utils/question.ai");
 const { generateOTP } = require("../utils/generate.otp");
 
 exports.createPaper = async (req, res) => {
@@ -231,14 +232,12 @@ exports.getPapers = async (req, res) => {
 exports.showPaper = async (req, res) => {
   const { id } = req.params;
   try {
-    console.log('paper details', id);
     
     // Find the paper by ID and populate the author details
     const paper = await Paper.findById(id)
       .populate("author", "name email")
       .populate("children", "name grade");
 
-      console.log(paper, "paper details");
       
 
     // If the paper doesn't exist, return a 404 response
@@ -322,12 +321,191 @@ exports.questionAnswer = async (req, res) => {
   } */
 };
 
+exports.generateQuestionExplanation = async (req, res) => {
+  try {
+    
+    const { questionId } = req.params;
+    const { questionNumber } = req.query;
+
+    if (!questionId) {
+      return res.status(400).json({
+        success: false,
+        message: "Question ID is required.",
+      });
+    }
+
+    // Convert questionNumber to number if provided
+    const questionNum = questionNumber ? parseInt(questionNumber) : null;
+
+    // Check if explanation document exists for this questionId
+    const existingExplanationDoc = await QuestionExplanation.findOne({
+      questionId: questionId,
+      isDeleted: false
+    });
+
+    // If questionNumber is provided, check if that specific question explanation exists
+    if (questionNum && existingExplanationDoc) {
+      const existingQuestionExplanation = existingExplanationDoc.explanations.find(
+        exp => exp.questionNumber === questionNum
+      );
+
+      if (existingQuestionExplanation) {
+        return successResponse(
+          res,
+          200,
+          "Explanation retrieved successfully",
+          {
+            questionId: existingExplanationDoc.questionId,
+            questionNumber: questionNum,
+            explanation: existingQuestionExplanation.explanation,
+            references: existingQuestionExplanation.references,
+            generatedAt: existingQuestionExplanation.generatedAt
+          }
+        );
+      }
+    }
+
+    // Fetch the question details
+    const paper = await Paper.findById(questionId);
+    if (!paper) {
+      return res.status(404).json({
+        success: false,
+        message: "Question not found.",
+      });
+    }
+
+
+    // If questionNumber is provided, validate it exists in the paper
+    if (questionNum) {
+      const questionExists = paper.questions && paper.questions.find(q => q.questionNumber === questionNum);
+      if (!questionExists) {
+        return res.status(404).json({
+          success: false,
+          message: `Question number ${questionNum} not found in this paper.`,
+        });
+      }
+    }
+
+    console.log("Generating AI explanation...");
+
+    // Generate new explanation using AI
+    const aiResponse = await generateQuestionExplanation({
+      subject: paper.subject,
+      syllabus: paper.syllabus,
+      className: paper.className,
+      chapter_from: paper.chapter_from,
+      chapter_to: paper.chapter_to,
+      language: paper.language,
+      no_of_question: paper.no_of_question,
+      questions: paper.questions,
+      questionNumber: questionNum
+    });
+
+    console.log("AI response received, saving to database...");
+
+    // Prepare the new explanation object
+    const newExplanation = {
+      questionNumber: questionNum || 0,
+      explanation: aiResponse.explanation,
+      references: aiResponse.references,
+      generatedAt: new Date()
+    };
+
+    let result;
+
+    if (existingExplanationDoc) {
+      // Update existing document by adding new explanation to the array
+      result = await QuestionExplanation.findOneAndUpdate(
+        { questionId: questionId },
+        { 
+          $push: { explanations: newExplanation }
+        },
+        { new: true }
+      );
+      console.log("Added explanation to existing document");
+    } else {
+      // Create new document with the explanation
+      const newDoc = new QuestionExplanation({
+        questionId: questionId,
+        explanations: [newExplanation]
+      });
+      result = await newDoc.save();
+      console.log("Created new explanation document");
+    }
+
+    // Return the specific explanation that was just added/created
+    const addedExplanation = result.explanations.find(
+      exp => exp.questionNumber === (questionNum || 0)
+    );
+
+    console.log("Explanation saved successfully");
+
+    return successResponse(
+      res,
+      201,
+      "Explanation generated and saved successfully",
+      {
+        questionId: result.questionId,
+        questionNumber: addedExplanation.questionNumber,
+        explanation: addedExplanation.explanation,
+        references: addedExplanation.references,
+        generatedAt: addedExplanation.generatedAt
+      }
+    );
+
+  } catch (error) {
+    console.error("Error generating explanation:", error);
+    return errorResponse(res, error);
+  }
+};
+
+exports.getAllQuestionExplanations = async (req, res) => {
+  try {
+    const { questionId } = req.params;
+
+
+    if (!questionId) {
+      return res.status(400).json({
+        success: false,
+        message: "Question ID is required.",
+      });
+    }
+
+    // Check if explanation document exists for this questionId
+    const explanationDoc = await QuestionExplanation.findOne({
+      questionId: questionId,
+      isDeleted: false
+    });
+
+    if (!explanationDoc) {
+      return res.status(404).json({
+        success: false,
+        message: "No explanations found for this question.",
+      });
+    }
+
+    return successResponse(
+      res,
+      200,
+      "All explanations retrieved successfully",
+      {
+        questionId: explanationDoc.questionId,
+        totalExplanations: explanationDoc.explanations.length,
+        explanations: explanationDoc.explanations
+      }
+    );
+
+  } catch (error) {
+    console.error("Error fetching all explanations:", error);
+    return errorResponse(res, error);
+  }
+};
+
 exports.getChildrenLogin = async (req, res) => {
   try {
     const { id } = req.params;
     //const { parentId, questionId, otp } = req.body;
 	const { questionId, otp } = req.body;
-	console.log(questionId, otp, id, "childlogin");
 
     // Validate input
     if (!id || !questionId || !otp) {
@@ -337,7 +515,7 @@ exports.getChildrenLogin = async (req, res) => {
     const child = await Children.findOne({
       _id: id,
     });
-	console.log(child,"childchildchild");
+
     if (!child) {
       return res.status(400).json({ message: "Child not found." });
     }
@@ -418,3 +596,4 @@ exports.questionAssign = async (req, res) => {
     return errorResponse(res, error);
   }
 };
+

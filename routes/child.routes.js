@@ -5,6 +5,7 @@ const {
   showChild,
   updateChild,
   deleteChild,
+  getClassList,
 } = require("../controllers/child.controller");
 const { auth } = require("../middleware/auth");
 const router = express.Router();
@@ -202,5 +203,45 @@ router.put("/:id", auth, updateChild);
  *         description: Child not found
  */
 router.delete("/:id", auth, deleteChild);
+
+/**
+ * @swagger
+ * /api/children/classes/list:
+ *   get:
+ *     summary: Get class list based on user role
+ *     description: Returns grades/classes based on authenticated user. Admin gets all grades, parents get grades from their children, children get their own grade.
+ *     tags: [Children]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Class list retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Grades retrieved successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     grades:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       example: ["5", "6", "7", "8"]
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Not found
+ */
+router.get("/classes/list", auth, getClassList);
 
 module.exports = router;

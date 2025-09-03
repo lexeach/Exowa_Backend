@@ -32,7 +32,6 @@ exports.createChild = async (req, res) => {
     const sortOrder =  1;
 	const filter = { parent: parentId };
 	const childs = await Children.find(filter).populate("parent", "name email");
-	console.log(req.user.childnumber, "childs length");
 	if (childs.length>= req.user.childnumber) {
       return res.status(403).json({
         success: false,
@@ -70,7 +69,8 @@ exports.createChild = async (req, res) => {
 
 exports.getChildren = async (req, res) => {
   try {
-    const parentId = Number(req.user.id); // Set from auth middleware
+    
+    const parentId = req.user.id; // Set from auth middleware
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const sortField = req.query.sort || "createdAt"; // Default sorting field
@@ -86,6 +86,7 @@ exports.getChildren = async (req, res) => {
     if (!user) {
       return successResponse(res, 404, "User not found");
     }
+ 
     // Add role-based filtering
     if (user === "parent") {
       filter.parent = parentId
@@ -134,7 +135,6 @@ exports.showChild = async (req, res) => {
       _id: id,
     //  parent: parentId,
     });
-console.log(child,"childchildchild");
     if (!child) {
       return successResponse(res, 404, "Child not found");
     }
@@ -189,6 +189,105 @@ exports.deleteChild = async (req, res) => {
     }
 
     return successResponse(res, 200, "Child deleted successfully!");
+  } catch (error) {
+    return errorResponse(res, error);
+  }
+};
+
+exports.getClassList = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    // If user is admin, return all possible grades
+    if (userRole === "admin") {
+      const allGrades = [{ value: 6, label: "6" },
+        { value: 7, label: "7" },
+        { value: 8, label: "8" },
+        { value: 9, label: "9" },
+        { value: 10, label: "10" },
+        { value: 11, label: "11" },
+        { value: 12, label: "12" }];
+      return successResponse(
+        res,
+        200,
+        "All grades retrieved successfully",
+        { data: allGrades }
+      );
+    }
+
+    // For non-admin users, get grades from their children
+    if (userRole === "parent") {
+      const children = await Children.find({
+        parent: userId,
+        isDeleted: false
+      }).select("grade");
+
+      if (!children || children.length === 0) {
+        return successResponse(
+          res,
+          200,
+          "No children found for this user",
+          { data: [] }
+        );
+      }
+
+      // Extract unique grades and sort them numerically
+      const data = [...new Set(children.map(child => child.grade))]
+        .filter(grade => grade)
+        .map(grade => {
+          // Extract numeric part from grades like "8th Grade" -> "8"
+          const numericGrade = grade.toString().match(/\d+/);
+          return numericGrade ? numericGrade[0] : null;
+        })
+        .filter(grade => grade && !isNaN(grade))
+        .sort((a, b) => parseInt(a) - parseInt(b))
+        .map(grade => ({ value: parseInt(grade), label: grade }));
+
+        
+      return successResponse(
+        res,
+        200,
+        "Grades retrieved successfully from user's children",
+        { data }
+      );
+    }
+
+    // For child users, return their own grade
+    if (userRole === "child") {
+      const child = await Children.findOne({
+        _id: userId,
+        isDeleted: false
+      }).select("grade");
+
+      if (!child) {
+        return successResponse(
+          res,
+          404,
+          "Child profile not found",
+          { data: [] }
+        );
+      }
+
+      return successResponse(
+        res,
+        200,
+        "Grade retrieved successfully",
+        { 
+          data: [{ 
+            value: parseInt(child.grade.match(/\d+/)?.[0] || child.grade), 
+            label: child.grade.match(/\d+/)?.[0] || child.grade 
+          }] 
+        }
+      );
+    }
+
+    return customErrorResponse(
+      res,
+      400,
+      "Invalid user role"
+    );
+
   } catch (error) {
     return errorResponse(res, error);
   }
