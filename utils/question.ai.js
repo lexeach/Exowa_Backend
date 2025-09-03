@@ -150,11 +150,29 @@ const generateQuestionExplanation = async (questionData) => {
       1. A detailed explanation of the concept tested in this specific question
       2. Step-by-step solution approach
       3. Why the correct answer is right and why others are wrong
+      4. Learning resources including:
+         - Educational videos (YouTube links or video titles)
+         - Articles (online resources, study materials)
+         - Books (textbook recommendations, reference books)
       
       Return ONLY a valid JSON object in this exact format:
       {
         "explanation": "Detailed explanation of this specific question and the concept it tests...",
-            }
+        "references": {
+          "videos": [
+            "Video title or link 1",
+            "Video title or link 2"
+          ],
+          "articles": [
+            "Article title or link 1",
+            "Article title or link 2"
+          ],
+          "books": [
+            "Book title and author 1",
+            "Book title and author 2"
+          ]
+        }
+      }
       
       Make the explanation educational, comprehensive, and suitable for students of the specified class level.
       Focus specifically on the concept tested in this question.
@@ -174,11 +192,28 @@ const generateQuestionExplanation = async (questionData) => {
       Please provide:
       1. A detailed explanation of the concepts covered in these questions
       2. Step-by-step solutions or approaches for understanding the topics
+      3. Learning resources including:
+         - Educational videos (YouTube links or video titles)
+         - Articles (online resources, study materials)
+         - Books (textbook recommendations, reference books)
       
       Return ONLY a valid JSON object in this exact format:
       {
         "explanation": "Detailed explanation of the concepts and topics covered in these questions...",
-      
+        "references": {
+          "videos": [
+            "Video title or link 1",
+            "Video title or link 2"
+          ],
+          "articles": [
+            "Article title or link 1",
+            "Article title or link 2"
+          ],
+          "books": [
+            "Book title and author 1",
+            "Book title and author 2"
+          ]
+        }
       }
       
       Make the explanation educational, comprehensive, and suitable for students of the specified class level.
