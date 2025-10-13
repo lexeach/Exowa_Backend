@@ -45,6 +45,7 @@ exports.createPaper = async (req, res) => {
     chapter_to,
     language,
     no_of_question,
+    topics
   } = req.body;
 
   const userId = req.user.id; // Set from auth middleware
@@ -71,12 +72,13 @@ exports.createPaper = async (req, res) => {
       chapter_from,
       chapter_to,
       language,
-      author: Number(userId),
-      authorId: Number(userId),
+      author: (userId),
+      authorId: (userId),
       file: filePath,
       questions: generatedPapers,
       otp,
       no_of_question,
+      topics
     };
     const paper = new Paper(payload);
     await paper.save();
@@ -155,6 +157,9 @@ exports.getPapers = async (req, res) => {
       filter.$or = [
         { subject: { $regex: searchKey, $options: "i" } },
         { syllabus: { $regex: searchKey, $options: "i" } },
+        { language: { $regex: searchKey, $options: "i" } },
+        { chapter_from: { $regex: searchKey, $options: "i" } },
+        { chapter_to: { $regex: searchKey, $options: "i" } },
       ];
     }
 

@@ -10,20 +10,23 @@ const {
 exports.createChild = async (req, res) => {
   const requiredFields = ["name", "age", "grade"]; // Define required fields
   // Validate required fields
+    console.log('topics', req.body);
   const validationError = validateRequiredFields(requiredFields, req.body, res);
   if (validationError) return; // Stop execution if validation fails
 
-  const { name, age, grade } = req.body;
+  const { name, age, grade, topics } = req.body;
+
+  
 
   try {
     // Ensure the parent is authenticated
     const parentId = req.user.id; // Set from auth middleware
-    const parent = req.user.role;
+    const userRole = req.user.role;
 
-    if (!parent || parent !== "parent") {
+    if (userRole !== 'admin' && userRole !== 'parent') {
       return res.status(403).json({
         success: false,
-        message: "Only parents can create child accounts.",
+        message: "Only parents and admins can create child accounts.",
       });
     }
 	const page = 1;
@@ -44,6 +47,7 @@ exports.createChild = async (req, res) => {
       age,
       grade,
       parent: parentId, // Link the child to the parent
+      topics
     });
 
     await child.save();
@@ -88,7 +92,7 @@ exports.getChildren = async (req, res) => {
     }
  
     // Add role-based filtering
-    if (user === "parent") {
+    if (user === "parent" && user !== "admin") {
       filter.parent = parentId
     }
 
@@ -96,7 +100,8 @@ exports.getChildren = async (req, res) => {
 
     const children = await Children.find(filter)
       .populate("parent", "name email")
-      .sort({ [sortField]: sortOrder })
+      // .sort({ [sortField]: sortOrder })
+      .sort({ 'createdAt': -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
@@ -147,26 +152,29 @@ exports.showChild = async (req, res) => {
 
 exports.updateChild = async (req, res) => {
   const { id } = req.params;
-  const { name, age, grade } = req.body;
+  const { name, age, grade, topics } = req.body;
 
   try {
     const today = new Date();
     const currentYear = today.getFullYear();
     const startDate = new Date(`${currentYear}-04-01`); // April 1st
     const endDate = new Date(`${currentYear}-05-30T23:59:59`); // May 30th end of day
-    if (today < startDate || today > endDate) {
-      return successResponse(res, 403, "Updates are only allowed from April 1st to May 30th.");
-    }
+
+    // if (today < startDate || today > endDate) {
+    //   return successResponse(res, 403, "Updates are only allowed from April 1st to May 30th.");
+    // }
     const parentId = Number(req.user.id); // Set from auth middleware
 
+    const filter = req.user.role === 'admin' ? { _id: id } : { _id: id, parent: parentId };
+    
     const child = await Children.findOneAndUpdate(
-      { _id: id, parent: parentId },
-      { name, age, grade },
+      filter,
+      { name, age, grade, topics },
       { new: true }
     );
 
     if (!child) {
-      return successResponse(res, 404, "Child not found");
+      return successResponse(res, 404, "You haven't added this child");
     }
 
     return successResponse(res, 200, "Child updated successfully", child);

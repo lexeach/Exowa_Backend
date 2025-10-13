@@ -8,9 +8,7 @@ const paperSchema = new mongoose.Schema(
     chapter_to: { type: String },
     language: { type: String },
     authorId: { type: String },
-    author: {
-      type: String, required: true,
-    },
+    author: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     file: { type: String },
     questions: { type: [Object], default: [] }, // Supports different data structures
     answers: { type: [Object], default: [] },
@@ -20,6 +18,7 @@ const paperSchema = new mongoose.Schema(
     className: { type: String },
     url: { type: String },
     otp: { type: Number },
+    topics: [{ type: String  }],
     isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }

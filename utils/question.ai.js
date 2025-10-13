@@ -235,6 +235,7 @@ const generateQuestionExplanation = async (questionData) => {
       ]);
 
       const response = await result.response;
+      
       const text = response.text();
 
       const parsedResponse = JSON.parse(text);
