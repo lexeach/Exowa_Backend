@@ -150,11 +150,7 @@ const generateQuestionExplanation = async (questionData) => {
       1. A detailed explanation of the concept tested in this specific question
       2. Step-by-step solution approach
       3. Why the correct answer is right and why others are wrong
-      4. Learning resources including:
-         - Educational videos (YouTube links or video titles)
-         - Articles (online resources, study materials)
-         - Books (textbook recommendations, reference books)
-      
+
       Return ONLY a valid JSON object in this exact format:
       {
         "explanation": "Detailed explanation of this specific question and the concept it tests...",
@@ -192,10 +188,6 @@ const generateQuestionExplanation = async (questionData) => {
       Please provide:
       1. A detailed explanation of the concepts covered in these questions
       2. Step-by-step solutions or approaches for understanding the topics
-      3. Learning resources including:
-         - Educational videos (YouTube links or video titles)
-         - Articles (online resources, study materials)
-         - Books (textbook recommendations, reference books)
       
       Return ONLY a valid JSON object in this exact format:
       {
@@ -219,6 +211,12 @@ const generateQuestionExplanation = async (questionData) => {
       Make the explanation educational, comprehensive, and suitable for students of the specified class level.
       Ensure all references are relevant to the subject and syllabus.
     `;
+
+    // add this on both condition 
+    //   4. Learning resources including:
+    //  - Educational videos (YouTube links or video titles)
+    //  - Articles (online resources, study materials)
+    //  - Books (textbook recommendations, reference books)
 
   while (retryCount < MAX_RETRIES) {
     try {

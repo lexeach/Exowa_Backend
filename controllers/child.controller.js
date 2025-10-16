@@ -10,32 +10,31 @@ const {
 exports.createChild = async (req, res) => {
   const requiredFields = ["name", "age", "grade"]; // Define required fields
   // Validate required fields
-    console.log('topics', req.body);
   const validationError = validateRequiredFields(requiredFields, req.body, res);
   if (validationError) return; // Stop execution if validation fails
 
   const { name, age, grade, topics } = req.body;
-
-  
 
   try {
     // Ensure the parent is authenticated
     const parentId = req.user.id; // Set from auth middleware
     const userRole = req.user.role;
 
-    if (userRole !== 'admin' && userRole !== 'parent') {
+    if (
+      userRole !== "admin" &&
+      userRole !== "subadmin" &&
+      userRole !== "parent"
+    ) {
       return res.status(403).json({
         success: false,
-        message: "Only parents and admins can create child accounts.",
+        message:
+          "Only parents and admins | sub admins can create child accounts.",
       });
     }
-	const page = 1;
-    const limit = 10;
-    const sortField = "createdAt"; // Default sorting field
-    const sortOrder =  1;
-	const filter = { parent: parentId };
-	const childs = await Children.find(filter).populate("parent", "name email");
-	if (childs.length>= req.user.childnumber) {
+
+    const filter = { parent: parentId };
+    const childs = await Children.find(filter).populate("parent", "name email");
+    if (childs.length >= req.user.childnumber) {
       return res.status(403).json({
         success: false,
         message: "Your create child limit is over.",
@@ -47,7 +46,7 @@ exports.createChild = async (req, res) => {
       age,
       grade,
       parent: parentId, // Link the child to the parent
-      topics
+      topics,
     });
 
     await child.save();
@@ -73,7 +72,6 @@ exports.createChild = async (req, res) => {
 
 exports.getChildren = async (req, res) => {
   try {
-    
     const parentId = req.user.id; // Set from auth middleware
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -90,10 +88,10 @@ exports.getChildren = async (req, res) => {
     if (!user) {
       return successResponse(res, 404, "User not found");
     }
- 
+
     // Add role-based filtering
-    if (user === "parent" && user !== "admin") {
-      filter.parent = parentId
+    if (user === "parent" || (user === "subadmin" && user !== "admin")) {
+      filter.parent = parentId;
     }
 
     const total = await Children.countDocuments(filter);
@@ -101,7 +99,7 @@ exports.getChildren = async (req, res) => {
     const children = await Children.find(filter)
       .populate("parent", "name email")
       // .sort({ [sortField]: sortOrder })
-      .sort({ 'createdAt': -1 })
+      .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
@@ -138,7 +136,7 @@ exports.showChild = async (req, res) => {
     const parentId = Number(req.user.id); // Set from auth middleware
     const child = await Children.findOne({
       _id: id,
-    //  parent: parentId,
+      //  parent: parentId,
     });
     if (!child) {
       return successResponse(res, 404, "Child not found");
@@ -165,8 +163,9 @@ exports.updateChild = async (req, res) => {
     // }
     const parentId = Number(req.user.id); // Set from auth middleware
 
-    const filter = req.user.role === 'admin' ? { _id: id } : { _id: id, parent: parentId };
-    
+    const filter =
+      req.user.role === "admin" ? { _id: id } : { _id: id, parent: parentId };
+
     const child = await Children.findOneAndUpdate(
       filter,
       { name, age, grade, topics },
@@ -180,7 +179,7 @@ exports.updateChild = async (req, res) => {
     return successResponse(res, 200, "Child updated successfully", child);
   } catch (error) {
     return errorResponse(res, error);
-  } 
+  }
 };
 
 exports.deleteChild = async (req, res) => {
@@ -209,50 +208,45 @@ exports.getClassList = async (req, res) => {
 
     // If user is admin, return all possible grades
     if (userRole === "admin") {
-      const allGrades = [{ value: 6, label: "6" },
+      const allGrades = [
+        { value: 6, label: "6" },
         { value: 7, label: "7" },
         { value: 8, label: "8" },
         { value: 9, label: "9" },
         { value: 10, label: "10" },
         { value: 11, label: "11" },
-        { value: 12, label: "12" }];
-      return successResponse(
-        res,
-        200,
-        "All grades retrieved successfully",
-        { data: allGrades }
-      );
+        { value: 12, label: "12" },
+      ];
+      return successResponse(res, 200, "All grades retrieved successfully", {
+        data: allGrades,
+      });
     }
 
     // For non-admin users, get grades from their children
-    if (userRole === "parent") {
+    if (userRole === "parent" || userRole === "subadmin") {
       const children = await Children.find({
         parent: userId,
-        isDeleted: false
+        isDeleted: false,
       }).select("grade");
 
       if (!children || children.length === 0) {
-        return successResponse(
-          res,
-          200,
-          "No children found for this user",
-          { data: [] }
-        );
+        return successResponse(res, 200, "No children found for this user", {
+          data: [],
+        });
       }
 
       // Extract unique grades and sort them numerically
-      const data = [...new Set(children.map(child => child.grade))]
-        .filter(grade => grade)
-        .map(grade => {
+      const data = [...new Set(children.map((child) => child.grade))]
+        .filter((grade) => grade)
+        .map((grade) => {
           // Extract numeric part from grades like "8th Grade" -> "8"
           const numericGrade = grade.toString().match(/\d+/);
           return numericGrade ? numericGrade[0] : null;
         })
-        .filter(grade => grade && !isNaN(grade))
+        .filter((grade) => grade && !isNaN(grade))
         .sort((a, b) => parseInt(a) - parseInt(b))
-        .map(grade => ({ value: parseInt(grade), label: grade }));
+        .map((grade) => ({ value: parseInt(grade), label: grade }));
 
-        
       return successResponse(
         res,
         200,
@@ -265,37 +259,26 @@ exports.getClassList = async (req, res) => {
     if (userRole === "child") {
       const child = await Children.findOne({
         _id: userId,
-        isDeleted: false
+        isDeleted: false,
       }).select("grade");
 
       if (!child) {
-        return successResponse(
-          res,
-          404,
-          "Child profile not found",
-          { data: [] }
-        );
+        return successResponse(res, 404, "Child profile not found", {
+          data: [],
+        });
       }
 
-      return successResponse(
-        res,
-        200,
-        "Grade retrieved successfully",
-        { 
-          data: [{ 
-            value: parseInt(child.grade.match(/\d+/)?.[0] || child.grade), 
-            label: child.grade.match(/\d+/)?.[0] || child.grade 
-          }] 
-        }
-      );
+      return successResponse(res, 200, "Grade retrieved successfully", {
+        data: [
+          {
+            value: parseInt(child.grade.match(/\d+/)?.[0] || child.grade),
+            label: child.grade.match(/\d+/)?.[0] || child.grade,
+          },
+        ],
+      });
     }
 
-    return customErrorResponse(
-      res,
-      400,
-      "Invalid user role"
-    );
-
+    return customErrorResponse(res, 400, "Invalid user role");
   } catch (error) {
     return errorResponse(res, error);
   }

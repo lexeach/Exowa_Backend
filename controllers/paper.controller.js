@@ -49,6 +49,9 @@ exports.createPaper = async (req, res) => {
   } = req.body;
 
   const userId = req.user.id; // Set from auth middleware
+
+  console.log('req.user:', req.user, 'userId:', userId);
+  
   const filePath = req.file ? req.file.path : null; // File path from multer
 //	const filePath = "https://myreview.website/Exowa_Frontend_New-main/"; // File path from multer
   try {
@@ -65,6 +68,20 @@ exports.createPaper = async (req, res) => {
     });
 
     const otp = Math.floor(10000 + Math.random() * 90000) //generateOTP(5);
+    
+    // Convert userId to ObjectId if it's a valid ObjectId string, otherwise use authorId only
+    let authorObjectId = null;
+    try {
+      // Check if userId is a valid ObjectId format (24 hex characters)
+      if (userId && typeof userId === 'string' && userId.length === 24 && /^[0-9a-fA-F]{24}$/.test(userId)) {
+        authorObjectId = userId;
+      }
+    } catch (error) {
+      console.log('Invalid ObjectId format for userId:', userId);
+    }
+
+    // set creator 
+    
     const payload = {
       className,
       subject,
@@ -72,19 +89,27 @@ exports.createPaper = async (req, res) => {
       chapter_from,
       chapter_to,
       language,
-      author: (userId),
-      authorId: (userId),
+      authorId: userId,
+      // author: userId,
       file: filePath,
       questions: generatedPapers,
       otp,
       no_of_question,
       topics
     };
+    
+    // Only set author if we have a valid ObjectId
+    if (authorObjectId) {
+      payload.author = authorObjectId;
+      // payload.userId = authorObjectId;
+    }
+
+    console.log('Creating paper with payload:', payload);
+    
     const paper = new Paper(payload);
     await paper.save();
     return successResponse(res, 201, "Paper created successfully ", paper);
   } catch (error) {
-	  console.log(error);
     error.message ="Server is Busy Please Try Again Later, Thanks"
     return errorResponse(res, error);
   } 
@@ -148,7 +173,7 @@ exports.getPapers = async (req, res) => {
       return successResponse(res, 404, "User not found");
     }
     // Add role-based filtering
-    if (req.user.role === "parent") {
+    if (req.user.role === "parent" || req.user.role === "subadmin") {
       filter.authorId = userId;
     }
 
@@ -165,7 +190,7 @@ exports.getPapers = async (req, res) => {
 
     const total = await Paper.countDocuments(filter);
     const papers = await Paper.find(filter)
-      .populate("author", "name email")
+      .populate("author", "name email").populate("children", "name grade")
       .sort({ 'createdAt': -1 })
       .limit(limit)
       .skip((page - 1) * limit);
@@ -310,7 +335,7 @@ exports.questionAnswer = async (req, res) => {
     // Update the paper's answers and reset the OTP
     const updatedPaper = await Paper.findByIdAndUpdate(
       questionId,
-      { answers, otp: null },
+      { answers, otp: null, children:userId, childrenId: userId },
       { new: true }
     );
 
