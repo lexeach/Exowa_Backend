@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const User = require("../models/user.model");
 const Children = require("../models/child.model");
 const { validateRequiredFields } = require("../utils/validateRequiredFields");
@@ -6,6 +7,29 @@ const {
   errorResponse,
   customErrorResponse,
 } = require("../utils/response.dto");
+
+const resolveChildLimit = (tokenUser, dbRecord) => {
+  const fallbackLimit = 1;
+
+  if (
+    dbRecord &&
+    Number.isInteger(dbRecord.childLimit) &&
+    dbRecord.childLimit >= 0
+  ) {
+    return dbRecord.childLimit;
+  }
+
+  if (tokenUser) {
+    const tokenLimit = Number(
+      tokenUser.childLimit ?? tokenUser.child_limit ?? tokenUser.childnumber
+    );
+    if (Number.isInteger(tokenLimit) && tokenLimit >= 0) {
+      return tokenLimit;
+    }
+  }
+
+  return fallbackLimit;
+};
 
 exports.createChild = async (req, res) => {
   const requiredFields = ["name", "age", "grade"]; // Define required fields
@@ -32,22 +56,70 @@ exports.createChild = async (req, res) => {
       });
     }
 
-    const filter = { parent: parentId };
-    const childs = await Children.find(filter).populate("parent", "name email");
-    if (childs.length >= req.user.childnumber) {
+    let userRecord = null;
+    if (mongoose.Types.ObjectId.isValid(parentId)) {
+      userRecord = await User.findOne({
+        _id: parentId,
+        isDeleted: { $ne: true },
+      })
+        .select("_id childLimit")
+        .lean();
+    }
+
+    const childLimit = resolveChildLimit(req.user, userRecord);
+
+    const filter = {
+      owner: parentId,
+      $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }],
+    };
+    if (userRecord?._id) {
+      filter.owner = userRecord._id;
+    }
+
+    const existingChildrenCount = await Children.countDocuments(filter);
+
+    if (childLimit === 0) {
       return res.status(403).json({
         success: false,
-        message: "Your create child limit is over.",
+        message:
+          "You cannot add new child accounts. Your current child limit is 0.",
       });
     }
+
+    if (
+      Number.isInteger(childLimit) &&
+      childLimit >= 0 &&
+      existingChildrenCount >= childLimit
+    ) {
+      const limitMessage =
+        childLimit === 0
+          ? "You cannot add new child accounts. Your current child limit is 0."
+          : `You have reached your child limit of ${childLimit}.`;
+
+      return res.status(403).json({
+        success: false,
+        message: limitMessage,
+        details: {
+          addedChildren: existingChildrenCount,
+          allowedChildren: childLimit,
+        },
+      });
+    }
+    
     // Create the child user
-    const child = new Children({
+    const childData = {
       name,
       age,
       grade,
       parent: parentId, // Link the child to the parent
       topics,
-    });
+    };
+
+    if (userRecord?._id) {
+      childData.owner = userRecord._id;
+    }
+
+    const child = new Children(childData);
 
     await child.save();
 

@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const Paper = require("../models/paper.model");
 const User = require("../models/user.model");
@@ -8,8 +9,110 @@ const {
   errorResponse,
   customErrorResponse,
 } = require("../utils/response.dto");
-const { getGenerateQuestion, generateQuestionExplanation } = require("../utils/question.ai");
+const {
+  getGenerateQuestion,
+  generateQuestionExplanation: generateQuestionExplanationAI,
+} = require("../utils/question.ai");
 const { generateOTP } = require("../utils/generate.otp");
+
+const EXPLANATION_PENDING_MESSAGE =
+  "Explanation generation in progress. Please try again later.";
+
+const generateExplanationsSequentially = async (paperData, questionNumbers = []) => {
+  const paper = paperData?.toObject ? paperData.toObject() : paperData;
+  const paperId =
+    paper?._id?.toString?.() || paper?.id?.toString?.() || paper?.questionId;
+
+  if (!paper || !paperId) {
+    console.error("Invalid paper data provided for explanation generation");
+    return;
+  }
+
+  const uniqueNumbers = [
+    ...new Set(
+      questionNumbers
+        .map((num) => Number(num))
+        .filter((num) => Number.isFinite(num))
+    ),
+  ].sort((a, b) => a - b);
+
+  let explanationDoc;
+  try {
+    explanationDoc = await QuestionExplanation.findOne({
+      questionId: paperId,
+      isDeleted: false,
+    });
+
+    if (uniqueNumbers.length === 0) {
+      return;
+    }
+
+    for (const questionNumber of uniqueNumbers) {
+      const existingExplanation =
+        explanationDoc?.explanations?.find(
+          (exp) => exp.questionNumber === questionNumber
+        );
+
+      if (existingExplanation) {
+        continue;
+      }
+
+      const questionDataPayload = {
+        subject: paper.subject,
+        syllabus: paper.syllabus,
+        className: paper.className || paper.class,
+        chapter_from: paper.chapter_from,
+        chapter_to: paper.chapter_to,
+        language: paper.language,
+        no_of_question: paper.no_of_question,
+        questions: paper.questions,
+        questionNumber,
+      };
+
+      let aiResponse;
+
+      try {
+        aiResponse = await generateQuestionExplanationAI(questionDataPayload);
+      } catch (error) {
+        console.error(
+          `Failed to generate explanation for question ${questionNumber} of paper ${paperId}:`,
+          error
+        );
+        continue;
+      }
+
+      const newExplanation = {
+        questionNumber,
+        explanation: aiResponse.explanation,
+        references: aiResponse.references,
+        generatedAt: new Date(),
+      };
+
+      if (explanationDoc) {
+        explanationDoc.explanations.push(newExplanation);
+        explanationDoc = await explanationDoc.save();
+      } else {
+        explanationDoc = await new QuestionExplanation({
+          questionId: paperId,
+          explanations: [newExplanation],
+        }).save();
+      }
+    }
+  } catch (error) {
+    console.error("Error during background explanation generation:", error);
+  } finally {
+    try {
+      await Paper.findByIdAndUpdate(paperId, {
+        isExplanationGenerated: true,
+      });
+    } catch (updateError) {
+      console.error(
+        `Failed to update explanation status for paper ${paperId}:`,
+        updateError
+      );
+    }
+  }
+};
 
 exports.createPaper = async (req, res) => {
   const requiredFields = [
@@ -45,7 +148,7 @@ exports.createPaper = async (req, res) => {
     chapter_to,
     language,
     no_of_question,
-    topics
+    topics,
   } = req.body;
 
   const userId = req.user.id; // Set from auth middleware
@@ -56,6 +159,65 @@ exports.createPaper = async (req, res) => {
 //	const filePath = "https://myreview.website/Exowa_Frontend_New-main/"; // File path from multer
   try {
 
+    let userTopicLimit = 1;
+    let userChildLimit = 1;
+    const isValidUserObjectId =
+      typeof userId === "string" && mongoose.Types.ObjectId.isValid(userId);
+
+    if (isValidUserObjectId) {
+      const userRecord = await User.findById(userId)
+        .select("topicLimit childLimit")
+        .lean();
+
+      if (userRecord) {
+        if (
+          typeof userRecord.topicLimit === "number" &&
+          userRecord.topicLimit >= 0
+        ) {
+          userTopicLimit = userRecord.topicLimit;
+        }
+        if (
+          typeof userRecord.childLimit === "number" &&
+          userRecord.childLimit >= 0
+        ) {
+          userChildLimit = userRecord.childLimit;
+        }
+      }
+    }
+
+    const tokenTopicLimit = Number(
+      req.user.topicLimit ?? req.user.topic_limit
+    );
+    if (Number.isInteger(tokenTopicLimit) && tokenTopicLimit >= 0) {
+      userTopicLimit = tokenTopicLimit;
+    }
+
+    const tokenChildLimit = Number(
+      req.user.childLimit ?? req.user.child_limit ?? req.user.childnumber
+    );
+    if (Number.isInteger(tokenChildLimit) && tokenChildLimit >= 0) {
+      userChildLimit = tokenChildLimit;
+    }
+
+    const normalizedTopics = Array.isArray(topics)
+      ? topics
+      : topics !== undefined && topics !== null
+      ? [topics]
+      : [];
+
+    const filteredTopics = normalizedTopics
+      .map((topic) => (topic === null || topic === undefined ? "" : `${topic}`.trim()))
+      .filter((topic) => topic.length > 0);
+
+    if (filteredTopics.length > userTopicLimit && userTopicLimit >= 0) {
+      return customErrorResponse(
+        res,
+        400,
+        `Topic limit exceeded. You can only add up to ${userTopicLimit} topic${
+          userTopicLimit === 1 ? "" : "s"
+        }.`
+      );
+    }
 
     let generatedPapers = await getGenerateQuestion({
       className,
@@ -95,7 +257,9 @@ exports.createPaper = async (req, res) => {
       questions: generatedPapers,
       otp,
       no_of_question,
-      topics
+      topics: filteredTopics,
+      topicLimit: userTopicLimit,
+      childLimit: userChildLimit,
     };
     
     // Only set author if we have a valid ObjectId
@@ -104,7 +268,6 @@ exports.createPaper = async (req, res) => {
       // payload.userId = authorObjectId;
     }
 
-    console.log('Creating paper with payload:', payload);
     
     const paper = new Paper(payload);
     await paper.save();
@@ -322,9 +485,10 @@ exports.deletePaper = async (req, res) => {
 
 // answer the question
 exports.questionAnswer = async (req, res) => {
+
   //try {
     // Extract query and body parameters
-    const { questionId, answers, userId } = req.body;
+    const { questionId, answers, userId, questionNumber } = req.body;
     // Validate if the paper exists
     const paper = await Paper.findById(questionId);
 
@@ -335,15 +499,44 @@ exports.questionAnswer = async (req, res) => {
     // Update the paper's answers and reset the OTP
     const updatedPaper = await Paper.findByIdAndUpdate(
       questionId,
-      { answers, otp: null, children:userId, childrenId: userId },
+      {
+        answers,
+        otp: null,
+        children: userId,
+        childrenId: userId,
+        isExplanationGenerated: false,
+      },
       { new: true }
     );
+
+    if (!updatedPaper) {
+      return successResponse(res, 404, "Paper not found");
+    }
+
+    const responsePayload =
+      updatedPaper?.toObject ? updatedPaper.toObject() : updatedPaper;
+
+    const questionNumbers = Array.isArray(answers)
+      ? answers
+          .map((answer) => answer?.questionNumber)
+          .filter((num) => num !== undefined && num !== null)
+      : [];
+
+    if (questionNumber && !questionNumbers.includes(questionNumber)) {
+      questionNumbers.push(questionNumber);
+    }
+
+    if (questionNumbers.length > 0) {
+      setImmediate(() => {
+        generateExplanationsSequentially(responsePayload, questionNumbers);
+      });
+    }
 
     return successResponse(
       res,
       201,
       "Paper updated successfully ",
-      updatedPaper
+      responsePayload
     );
   /*} catch (error) {
 	  console.log(error);
@@ -353,7 +546,6 @@ exports.questionAnswer = async (req, res) => {
 
 exports.generateQuestionExplanation = async (req, res) => {
   try {
-    
     const { questionId } = req.params;
     const { questionNumber } = req.query;
 
@@ -364,127 +556,128 @@ exports.generateQuestionExplanation = async (req, res) => {
       });
     }
 
-    // Convert questionNumber to number if provided
-    const questionNum = questionNumber ? parseInt(questionNumber) : null;
-
-    // Check if explanation document exists for this questionId
-    const existingExplanationDoc = await QuestionExplanation.findOne({
-      questionId: questionId,
-      isDeleted: false
+    const explanationDoc = await QuestionExplanation.findOne({
+      questionId,
+      isDeleted: false,
     });
 
-    // If questionNumber is provided, check if that specific question explanation exists
-    if (questionNum && existingExplanationDoc) {
-      const existingQuestionExplanation = existingExplanationDoc.explanations.find(
-        exp => exp.questionNumber === questionNum
-      );
+    const hasQuestionNumber = questionNumber !== undefined;
+    let questionNum = null;
+    if (hasQuestionNumber) {
+      questionNum = Number(questionNumber);
 
-      if (existingQuestionExplanation) {
-        return successResponse(
-          res,
-          200,
-          "Explanation retrieved successfully",
-          {
-            questionId: existingExplanationDoc.questionId,
-            questionNumber: questionNum,
-            explanation: existingQuestionExplanation.explanation,
-            references: existingQuestionExplanation.references,
-            generatedAt: existingQuestionExplanation.generatedAt
-          }
-        );
-      }
-    }
-
-    // Fetch the question details
-    const paper = await Paper.findById(questionId);
-    if (!paper) {
-      return res.status(404).json({
-        success: false,
-        message: "Question not found.",
-      });
-    }
-
-
-    // If questionNumber is provided, validate it exists in the paper
-    if (questionNum) {
-      const questionExists = paper.questions && paper.questions.find(q => q.questionNumber === questionNum);
-      if (!questionExists) {
-        return res.status(404).json({
+      if (!Number.isFinite(questionNum)) {
+        return res.status(400).json({
           success: false,
-          message: `Question number ${questionNum} not found in this paper.`,
+          message: "Invalid question number.",
         });
       }
     }
 
-    console.log("Generating AI explanation...");
-
-    // Generate new explanation using AI
-    const aiResponse = await generateQuestionExplanation({
-      subject: paper.subject,
-      syllabus: paper.syllabus,
-      className: paper.className,
-      chapter_from: paper.chapter_from,
-      chapter_to: paper.chapter_to,
-      language: paper.language,
-      no_of_question: paper.no_of_question,
-      questions: paper.questions,
-      questionNumber: questionNum
-    });
-
-    console.log("AI response received, saving to database...");
-
-    // Prepare the new explanation object
-    const newExplanation = {
-      questionNumber: questionNum || 0,
-      explanation: aiResponse.explanation,
-      references: aiResponse.references,
-      generatedAt: new Date()
+    let paperDoc = null;
+    const ensurePaperLoaded = async () => {
+      if (!paperDoc) {
+        paperDoc = await Paper.findById(questionId);
+      }
+      return paperDoc;
     };
 
-    let result;
+    if (!explanationDoc) {
+      const paper = await ensurePaperLoaded();
 
-    if (existingExplanationDoc) {
-      // Update existing document by adding new explanation to the array
-      result = await QuestionExplanation.findOneAndUpdate(
-        { questionId: questionId },
-        { 
-          $push: { explanations: newExplanation }
-        },
-        { new: true }
-      );
-      console.log("Added explanation to existing document");
-    } else {
-      // Create new document with the explanation
-      const newDoc = new QuestionExplanation({
-        questionId: questionId,
-        explanations: [newExplanation]
-      });
-      result = await newDoc.save();
-      console.log("Created new explanation document");
+      if (!paper) {
+        return res.status(404).json({
+          success: false,
+          message: "Question not found.",
+        });
+      }
+
+      if (hasQuestionNumber) {
+        const questionExists = paper.questions?.some(
+          (question) => Number(question.questionNumber) === questionNum
+        );
+
+        if (!questionExists) {
+          return res.status(404).json({
+            success: false,
+            message: `Question number ${questionNum} not found in this paper.`,
+          });
+        }
+      }
+
+      if (paper.isExplanationGenerated) {
+        const numbersToGenerate = hasQuestionNumber
+          ? [questionNum]
+          : (paper.questions || [])
+              .map((question) => Number(question.questionNumber))
+              .filter((num) => Number.isFinite(num));
+
+        if (numbersToGenerate.length > 0) {
+          setImmediate(() => {
+            generateExplanationsSequentially(paper, numbersToGenerate);
+          });
+        }
+      }
+
+      return successResponse(res, 404, EXPLANATION_PENDING_MESSAGE);
     }
 
-    // Return the specific explanation that was just added/created
-    const addedExplanation = result.explanations.find(
-      exp => exp.questionNumber === (questionNum || 0)
-    );
+    if (hasQuestionNumber) {
+      const explanation = explanationDoc.explanations.find(
+        (exp) => exp.questionNumber === questionNum
+      );
 
-    console.log("Explanation saved successfully");
+      if (!explanation) {
+        const paper = await ensurePaperLoaded();
+
+        if (!paper) {
+          return res.status(404).json({
+            success: false,
+            message: "Question not found.",
+          });
+        }
+
+        const questionExists = paper.questions?.some(
+          (question) => Number(question.questionNumber) === questionNum
+        );
+
+        if (!questionExists) {
+          return res.status(404).json({
+            success: false,
+            message: `Question number ${questionNum} not found in this paper.`,
+          });
+        }
+
+        if (paper.isExplanationGenerated) {
+          setImmediate(() => {
+            generateExplanationsSequentially(paper, [questionNum]);
+          });
+        }
+
+        return successResponse(res, 404, EXPLANATION_PENDING_MESSAGE);
+      }
+
+      return successResponse(res, 200, "Explanation retrieved successfully", {
+        questionId: explanationDoc.questionId,
+        questionNumber: questionNum,
+        explanation: explanation.explanation,
+        references: explanation.references,
+        generatedAt: explanation.generatedAt,
+      });
+    }
 
     return successResponse(
       res,
-      201,
-      "Explanation generated and saved successfully",
+      200,
+      "Explanations retrieved successfully",
       {
-        questionId: result.questionId,
-        questionNumber: addedExplanation.questionNumber,
-        explanation: addedExplanation.explanation,
-        references: addedExplanation.references,
-        generatedAt: addedExplanation.generatedAt
+        questionId: explanationDoc.questionId,
+        totalExplanations: explanationDoc.explanations.length,
+        explanations: explanationDoc.explanations,
       }
     );
-
   } catch (error) {
-    console.error("Error generating explanation:", error);
+    console.error("Error fetching explanations:", error);
     return errorResponse(res, error);
   }
 };

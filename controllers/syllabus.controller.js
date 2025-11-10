@@ -99,62 +99,6 @@ exports.getSyllabuses = async (req, res) => {
   }
 };
 
-// New endpoint to get both syllabuses and subjects
-exports.getSyllabusesWithSubjects = async (req, res) => {
-  try {
-    const author = req.user.id;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const sortField = req.query.sort || "createdAt";
-    const sortOrder = req.query.order === "desc" ? -1 : 1;
-    const searchKey = (req.query.search || "").trim();
-
-    // Get syllabuses
-    const syllabusFilter = { isDeleted: false };
-    if (searchKey) {
-      syllabusFilter.name = { $regex: searchKey, $options: "i" };
-    }
-
-    const syllabusTotal = await Syllabus.countDocuments(syllabusFilter);
-    const syllabuses = await Syllabus.find(syllabusFilter)
-      .populate("author", "name email")
-      .sort({ [sortField]: sortOrder })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
-
-    // Get subjects
-    const Subject = require("../models/subject.model");
-    const subjectFilter = { isDeleted: false };
-    const subjects = await Subject.find(subjectFilter)
-      .populate("author", "name email")
-      .sort({ [sortField]: sortOrder });
-
-    const pagination = {
-      current_page: page,
-      per_page: limit,
-      total: syllabusTotal,
-      last_page: Math.ceil(syllabusTotal / limit),
-      from: (page - 1) * limit + 1,
-      to: Math.min(page * limit, syllabusTotal),
-    };
-
-    const response = {
-      syllabuses: syllabuses,
-      subjects: subjects
-    };
-
-    return successResponse(
-      res,
-      200,
-      "Syllabuses and subjects fetched successfully",
-      response,
-      pagination
-    );
-  } catch (error) {
-    return errorResponse(res, error);
-  }
-};
-
 exports.showSyllabus = async (req, res) => {
   const { id } = req.params;
 

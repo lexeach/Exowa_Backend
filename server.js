@@ -25,7 +25,6 @@ const allowedOrigins =
     "https://test.exowa.click",
     "https://heartfelt-dolphin-732aa6.netlify.app",
     "https://schoolname.exowa.click",
-    "https://svn.exowa.click",
   "https://auto-paper.netlify.app", // Deployed host
   "http://localhost:5173", // Local development
 ];

@@ -19,6 +19,9 @@ const paperSchema = new mongoose.Schema(
     url: { type: String },
     otp: { type: Number },
     topics: [{ type: String  }],
+    topicLimit: { type: Number, default: 1, min: 0 },
+    childLimit: { type: Number, default: 1, min: 0 },
+    isExplanationGenerated: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }
