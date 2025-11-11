@@ -202,33 +202,71 @@ exports.login = async (req, res) => {
         }
       );
 
-      console.log("response ####", response.data);
+      console.log("response ####", response.data?.data?.[0].user_email);
+
+      const user_email = response.data?.data?.[0]?.user_email;
+      const name = response.data?.data?.[0]?.user_name;
+      const user_role = response.data?.data?.[0]?.user_role;
+
+      const existingUser = await User.findOne({ email: user_email });
+      if (!existingUser){
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+    
+        const user = new User({ name, email: user_email, password: hashedPassword, role:user_role });
+    
+        const payload = {
+          id: user._id,
+          email: user.email,
+          role: user.role,
+          childLimit: user.childLimit,
+          topicLimit: user.topicLimit,
+          childnumber: user.childLimit,
+        };
+  
+        const token = jwt.sign(payload, process.env.JWT_SECRET, {
+          expiresIn: "1h",
+        });
+  
+       res.status(200).json({
+          token,
+          user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role, // Adjust if you have roles
+            childLimit: user.childLimit,
+            topicLimit: user.topicLimit,
+          },
+        });
+
+
+      } else {
 
       // If the API returns user data, login is successful
-      const user = response.data.data;
+      // const user = response.data.data;
 
-      if (!user || user.length === 0) {
-        return res.status(400).json({ message: response.data.message });
+      if (!existingUser) {
+        return res.status(400).json({ message: "User not found" });
       }
-      console.log(user[0].userid);
 
       // Assuming the API validates the password and returns user info
-      const externalChildLimit =
-        Number.isInteger(user[0].child_limit) && user[0].child_limit >= 0
-          ? user[0].child_limit
-          : 1;
-      const externalTopicLimit =
-        Number.isInteger(user[0].topic_limit) && user[0].topic_limit >= 0
-          ? user[0].topic_limit
-          : 1;
+      // const externalChildLimit =
+      //   Number.isInteger(user[0].child_limit) && user[0].child_limit >= 0
+      //     ? user[0].child_limit
+      //     : 1;
+      // const externalTopicLimit =
+      //   Number.isInteger(user[0].topic_limit) && user[0].topic_limit >= 0
+      //     ? user[0].topic_limit
+      //     : 1;
 
       const payload = {
-        id: user[0].userid,
-        email: user[0].user_email,
-        role: user[0].user_role,
-        childLimit: externalChildLimit,
-        topicLimit: externalTopicLimit,
-        childnumber: externalChildLimit,
+        id: existingUser._id,
+        email: existingUser.email,
+        role: existingUser.role,
+        childLimit: existingUser.childLimit,
+        topicLimit: existingUser.topicLimit,
+        childnumber: existingUser.childLimit,
       };
 
       const token = jwt.sign(payload, process.env.JWT_SECRET, {
@@ -238,14 +276,16 @@ exports.login = async (req, res) => {
       res.status(200).json({
         token,
         user: {
-          id: user[0].userid,
-          name: user[0].user_name,
-          email: user[0].user_email,
-          role: user[0].user_role, // Adjust if you have roles
-          childLimit: externalChildLimit,
-          topicLimit: externalTopicLimit,
+          id: existingUser._id,
+          name: existingUser.name,
+          email: existingUser.email,
+          role: existingUser.role, // Adjust if you have roles
+          childLimit: existingUser.childLimit,
+          topicLimit: existingUser.topicLimit,
         },
       });
+    }
+
     }
   } catch (error) {
     console.error(error.response ? error.response.data : error.message);
