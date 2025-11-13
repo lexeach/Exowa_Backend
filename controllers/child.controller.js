@@ -172,7 +172,7 @@ exports.getChildren = async (req, res) => {
     const total = await Children.countDocuments(filter);
 
     const children = await Children.find(filter)
-      .populate("parent", "name email")
+      .populate("owner", "name email")
       // .sort({ [sortField]: sortOrder })
       .sort({ createdAt: -1 })
       .limit(limit * 1)
