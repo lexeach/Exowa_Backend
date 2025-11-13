@@ -72,6 +72,9 @@ exports.createChild = async (req, res) => {
       owner: parentId,
       $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }],
     };
+
+    console.log('userRecords >> ', userRecord);
+    
     if (userRecord?._id) {
       filter.owner = userRecord._id;
     }

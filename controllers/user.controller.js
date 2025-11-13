@@ -38,7 +38,6 @@ exports.updateUserLimits = async (req, res) => {
   const { id } = req.params;
   const { childLimit, topicLimit } = req.body;
 
-
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return customErrorResponse(res, 400, "Invalid user id");
   }
@@ -102,7 +101,6 @@ exports.updateTopicLimits = async (req, res) => {
   const { id } = req.params;
   const { topicLimit } = req.body;
 
-
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return customErrorResponse(res, 400, "Invalid user id");
   }
@@ -136,22 +134,29 @@ exports.updateTopicLimits = async (req, res) => {
 
   try {
     const updatedChild = await Children.findByIdAndUpdate(id, updates, {
-        new: true,
-        runValidators: true,
+      new: true,
+      runValidators: true,
     });
 
     if (!updatedChild) {
       return customErrorResponse(res, 404, "Child not found");
     }
 
-    return successResponse(res, 200, "Topic limit updated successfully", updatedChild);
+    return successResponse(
+      res,
+      200,
+      "Topic limit updated successfully",
+      updatedChild
+    );
   } catch (error) {
     return errorResponse(res, error);
   }
 };
 
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, LDAP } = req.body;
+
+  console.log(email, password, "ldap", LDAP?.data);
 
   try {
     // return
@@ -186,49 +191,68 @@ exports.login = async (req, res) => {
         },
       });
     } else {
-      // Send credentials directly to external API
-      //const response = await axios.post('https://apic.myreview.website:8453/api/admin/users_withPass', {
-      const response = await axios.post(
-        "https://backend.exowa.click/api/admin/users_withPass",
-        {
-          userid: email,
-          passwd: password,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer test_4NmoG4TVzCWe4Q",
-          },
-        }
-      );
+      if (!LDAP?.data?.data) {
+        return res.status(400).json({ message: "User not found" });
+      }
 
-      console.log("response ####", response.data?.data?.[0].user_email);
-
-      const user_email = response.data?.data?.[0]?.user_email;
-      const name = response.data?.data?.[0]?.user_name;
-      const user_role = response.data?.data?.[0]?.user_role;
-
+      const userRecord = LDAP?.data?.data[0];
+      const user_email = userRecord?.user_email;
+      const name = userRecord?.userid;
+      const user_role = userRecord?.user_role;
       const existingUser = await User.findOne({ email: user_email });
-      if (!existingUser){
+
+       if (existingUser) {
+
+        const payload = {
+          id: existingUser._id,
+          email: existingUser.email,
+          role: existingUser.role,
+          childLimit: existingUser.childLimit,
+          topicLimit: existingUser.topicLimit,
+          childnumber: existingUser.childLimit,
+        };
+
+        const token = jwt.sign(payload, process.env.JWT_SECRET, {
+          expiresIn: "1h",
+        });
+
+        res.status(200).json({
+          token,
+          user: {
+            id: existingUser._id,
+            name: existingUser.name,
+            email: existingUser.email,
+            role: existingUser.role, // Adjust if you have roles
+            childLimit: existingUser.childLimit,
+            topicLimit: existingUser.topicLimit,
+          },
+        });
+       } else {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
-    
-        const user = new User({ name, email: user_email, password: hashedPassword, role:user_role });
-    
+
+        const user = new User({
+          name,
+          email: user_email,
+          password: hashedPassword,
+          role: user_role,
+        });
+
+         await user.save();
+
         const payload = {
           id: user._id,
           email: user.email,
           role: user.role,
           childLimit: user.childLimit,
           topicLimit: user.topicLimit,
-          childnumber: user.childLimit,
         };
-  
+
         const token = jwt.sign(payload, process.env.JWT_SECRET, {
           expiresIn: "1h",
         });
-  
-       res.status(200).json({
+
+        res.status(200).json({
           token,
           user: {
             id: user._id,
@@ -239,57 +263,9 @@ exports.login = async (req, res) => {
             topicLimit: user.topicLimit,
           },
         });
-
-
-      } else {
-
-      // If the API returns user data, login is successful
-      // const user = response.data.data;
-
-      if (!existingUser) {
-        return res.status(400).json({ message: "User not found" });
-      }
-
-      // Assuming the API validates the password and returns user info
-      // const externalChildLimit =
-      //   Number.isInteger(user[0].child_limit) && user[0].child_limit >= 0
-      //     ? user[0].child_limit
-      //     : 1;
-      // const externalTopicLimit =
-      //   Number.isInteger(user[0].topic_limit) && user[0].topic_limit >= 0
-      //     ? user[0].topic_limit
-      //     : 1;
-
-      const payload = {
-        id: existingUser._id,
-        email: existingUser.email,
-        role: existingUser.role,
-        childLimit: existingUser.childLimit,
-        topicLimit: existingUser.topicLimit,
-        childnumber: existingUser.childLimit,
-      };
-
-      const token = jwt.sign(payload, process.env.JWT_SECRET, {
-        expiresIn: "1h",
-      });
-
-      res.status(200).json({
-        token,
-        user: {
-          id: existingUser._id,
-          name: existingUser.name,
-          email: existingUser.email,
-          role: existingUser.role, // Adjust if you have roles
-          childLimit: existingUser.childLimit,
-          topicLimit: existingUser.topicLimit,
-        },
-      });
-    }
-
+      }    
     }
   } catch (error) {
-    console.error(error.response ? error.response.data : error.message);
-
     // Handle invalid credentials
     if (error.response && error.response.status === 400) {
       return res.status(400).json({ message: "Invalid credentials" });
