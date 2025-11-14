@@ -236,10 +236,10 @@ exports.updateChild = async (req, res) => {
     // if (today < startDate || today > endDate) {
     //   return successResponse(res, 403, "Updates are only allowed from April 1st to May 30th.");
     // }
-    const parentId = Number(req.user.id); // Set from auth middleware
+    const parentId = (req.user.id); // Set from auth middleware
 
     const filter =
-      req.user.role === "admin" ? { _id: id } : { _id: id, parent: parentId };
+      req.user.role === "admin" ? { _id: id } : { _id: id, owner: parentId };
 
     const child = await Children.findOneAndUpdate(
       filter,
