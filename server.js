@@ -21,7 +21,7 @@ connectDB();
 //# this is for production
 const allowedOrigins = [
   "https://auto-paper.netlify.app", // Deployed host
-  "http://localhost:5173", // Local development
+  "https://test.exowa.click", // Local development
   
 ];
 app.use(
