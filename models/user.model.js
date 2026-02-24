@@ -8,10 +8,9 @@ const userSchema = new mongoose.Schema(
     isDeleted: { type: Boolean, default: false },
     role: {
       type: String,
-      enum: ["child", "parent", "admin"],
+      enum: ["child", "parent", "admin"], 
       default: "parent",
     },
-    childLimit: { type: Number, default: 1, min: 0 },
   },
   { timestamps: true }
 );

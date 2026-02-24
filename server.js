@@ -19,15 +19,10 @@ connectDB();
 // Enable CORS for all origins and methods
 // app.use(cors());
 //# this is for production
-const allowedOrigins =
-  [
-    "https://user.exowa.click",
-    "https://test.exowa.click",
-    "https://heartfelt-dolphin-732aa6.netlify.app",
-    "https://schoolname.exowa.click",
-    "https://svn.exowa.click",
+const allowedOrigins = [
   "https://auto-paper.netlify.app", // Deployed host
   "http://localhost:5173", // Local development
+  
 ];
 app.use(
   cors({
