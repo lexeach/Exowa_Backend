@@ -1,5 +1,6 @@
 const express = require("express");
-const { register, login } = require("../controllers/user.controller");
+const { register, login, updateUserLimits, getUsers, showUser, updateTopicLimits } = require("../controllers/user.controller");
+const { auth, adminAuth } = require("../middleware/auth");
 const { getChildrenLogin } = require("../controllers/paper.controller");
 
 const router = express.Router();
@@ -188,5 +189,14 @@ router.post("/login", login);
  *                   example: "An error occurred while fetching the answer."
  */
 router.post("/childLogin/:id", getChildrenLogin);
+
+router.get("/", getUsers);
+
+router.get("/detail/:id", showUser);
+
+router.put("/:id/limits", auth, adminAuth, updateUserLimits);
+
+router.put("/topic/:id/limits", auth, adminAuth, updateTopicLimits);
+
 
 module.exports = router;
