@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema(
       enum: ["child", "parent", "admin"],
       default: "parent",
     },
-    childLimit: { type: Number, default: 1, min: 0 },
+    childLimit: { type: Number, default: 3, min: 0 },
   },
   { timestamps: true }
 );
