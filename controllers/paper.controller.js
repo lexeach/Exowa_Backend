@@ -62,7 +62,7 @@ const generateExplanationsSequentially = async (paperData, questionNumbers = [])
         syllabus: paper.syllabus,
         className: paper.className || paper.class,
         chapter_from: paper.chapter_from,
-        chapter_to: paper.chapter_to,
+        //chapter_to: paper.chapter_to,
         language: paper.language,
         no_of_question: paper.no_of_question,
         questions: paper.questions,
@@ -119,7 +119,7 @@ exports.createPaper = async (req, res) => {
     "subject",
     "syllabus",
     "chapter_from",
-    "chapter_to",
+    //"chapter_to",
     "language",
     "no_of_question",
     "class",
@@ -145,7 +145,7 @@ exports.createPaper = async (req, res) => {
     subject,
     syllabus,
     chapter_from,
-    chapter_to,
+    //chapter_to,
     language,
     no_of_question,
     topics,
@@ -224,7 +224,7 @@ exports.createPaper = async (req, res) => {
       subject,
       syllabus,
       chapter_from,
-      chapter_to,
+      //chapter_to,
       language,
       no_of_question,
     });
@@ -249,7 +249,7 @@ exports.createPaper = async (req, res) => {
       subject,
       syllabus,
       chapter_from,
-      chapter_to,
+      //chapter_to,
       language,
       authorId: userId,
       // author: userId,
@@ -347,7 +347,7 @@ exports.getPapers = async (req, res) => {
         { syllabus: { $regex: searchKey, $options: "i" } },
         { language: { $regex: searchKey, $options: "i" } },
         { chapter_from: { $regex: searchKey, $options: "i" } },
-        { chapter_to: { $regex: searchKey, $options: "i" } },
+        //{ chapter_to: { $regex: searchKey, $options: "i" } },
       ];
     }
 
