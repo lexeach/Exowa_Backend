@@ -5,7 +5,7 @@ const paperSchema = new mongoose.Schema(
     subject: { type: String, required: true },
     syllabus: { type: String },
     chapter_from: { type: String },
-    chapter_to: { type: String },
+    //chapter_to: { type: String },
     language: { type: String },
     authorId: { type: String },
     author: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
