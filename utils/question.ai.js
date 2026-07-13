@@ -11,9 +11,10 @@ const getGenerateQuestion = async ({
   no_of_question,
 }) => {
   // Input validation
-  if (!className || !subject || !syllabus || !chapter_from || !chapter_to || !language) {
-    throw new Error("Missing required parameters");
-  }
+ 
+  if (!className || !subject || !syllabus || !chapter_from || !language) {
+  throw new Error("Missing required parameters");
+}
 
   const MAX_RETRIES = 3;
   let retryCount = 0;
