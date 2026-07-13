@@ -6,7 +6,7 @@ const getGenerateQuestion = async ({
   subject,
   syllabus,
   chapter_from,
-  chapter_to,
+  //chapter_to,
   language,
   no_of_question,
 }) => {
@@ -30,7 +30,7 @@ const getGenerateQuestion = async ({
   
   const prompt = `
     Generate exactly ${numberOfQuestions} multiple-choice questions for a ${subject} exam
-    for class ${className} based on the ${syllabus} syllabus from chapter ${chapter_from} to ${chapter_to}.
+    for class ${className} based on the ${syllabus} syllabus from chapter ${chapter_from} .
     Use ${language} language. Return ONLY a valid JSON array in this exact format:
     [
       {
@@ -138,7 +138,7 @@ const generateQuestionExplanation = async (questionData) => {
       Subject: ${questionData.subject}
       Syllabus: ${questionData.syllabus}
       Class: ${questionData.className}
-      Chapters: ${questionData.chapter_from} to ${questionData.chapter_to}
+      Chapters: ${questionData.chapter_from} 
       Language: ${questionData.language}
       Question Number: ${questionData.questionNumber}
       
@@ -179,7 +179,7 @@ const generateQuestionExplanation = async (questionData) => {
       Subject: ${questionData.subject}
       Syllabus: ${questionData.syllabus}
       Class: ${questionData.className}
-      Chapters: ${questionData.chapter_from} to ${questionData.chapter_to}
+      Chapters: ${questionData.chapter_from} 
       Language: ${questionData.language}
       Number of Questions: ${questionData.no_of_question}
       
