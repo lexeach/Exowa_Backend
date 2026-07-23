@@ -17,14 +17,41 @@ const verificationQuestionSchema = new mongoose.Schema(
       required: true,
     },
 
+    // Student Selected Answer
     selectedAnswer: {
       type: String,
       default: "",
     },
 
+    // Correct / Incorrect
     isCorrect: {
       type: Boolean,
       default: false,
+    },
+  },
+  { _id: false }
+);
+
+const attemptHistorySchema = new mongoose.Schema(
+  {
+    attemptNo: {
+      type: Number,
+      required: true,
+    },
+
+    score: {
+      type: Number,
+      default: 0,
+    },
+
+    scorePercentage: {
+      type: Number,
+      default: 0,
+    },
+
+    submittedAt: {
+      type: Date,
+      default: Date.now,
     },
   },
   { _id: false }
@@ -39,7 +66,7 @@ const learningVerificationSchema = new mongoose.Schema(
       required: true,
     },
 
-    // Original Question Index
+    // Original Wrong Question Number
     questionIndex: {
       type: Number,
       required: true,
@@ -57,13 +84,13 @@ const learningVerificationSchema = new mongoose.Schema(
       required: true,
     },
 
-    // Verification Questions (3 MCQs)
+    // Generated Verification Questions
     questions: {
       type: [verificationQuestionSchema],
       default: [],
     },
 
-    // Result
+    // Correct Answers Count
     score: {
       type: Number,
       default: 0,
@@ -74,6 +101,12 @@ const learningVerificationSchema = new mongoose.Schema(
       default: 3,
     },
 
+    // Percentage
+    scorePercentage: {
+      type: Number,
+      default: 0,
+    },
+
     // Pending / Completed
     status: {
       type: String,
@@ -81,10 +114,34 @@ const learningVerificationSchema = new mongoose.Schema(
       default: "Pending",
     },
 
-    // How many times user clicked "I Learnt"
+    // Number of verification attempts
     attempts: {
       type: Number,
       default: 1,
+    },
+
+    // Last submission time
+    submittedAt: {
+      type: Date,
+      default: null,
+    },
+
+    // Last attempt generated
+    lastAttemptAt: {
+      type: Date,
+      default: Date.now,
+    },
+
+    // Mastery achieved
+    verifiedAt: {
+      type: Date,
+      default: null,
+    },
+
+    // Future Analytics
+    attemptHistory: {
+      type: [attemptHistorySchema],
+      default: [],
     },
 
     createdBy: {
