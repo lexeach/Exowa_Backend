@@ -265,5 +265,93 @@ const generateQuestionExplanation = async (questionData) => {
     }
   }
 };
+const generateVerificationQuestions = async ({
+    explanation,
+    language
+}) => {
 
-module.exports = { getGenerateQuestion, generateQuestionExplanation };
+    const MAX_RETRIES = 3;
+    let retryCount = 0;
+    let lastError = null;
+
+    const model = genAI.getGenerativeModel({
+        model: process.env.GEMINI_MODEL,
+        generationConfig: {
+            responseMimeType: "application/json"
+        }
+    });
+
+    const prompt = `
+You are an expert teacher.
+
+Below is the learning content.
+
+${explanation}
+
+Generate EXACTLY 3 NEW multiple choice questions that test whether the student has understood this topic.
+
+Rules:
+
+- Questions must NOT copy the original question.
+- Questions must test the same concept.
+- Difficulty should be similar.
+- Return ONLY JSON.
+
+Format:
+
+[
+{
+"questionNumber":1,
+"question":"...",
+"choices":{
+"A":"...",
+"B":"...",
+"C":"...",
+"D":"..."
+},
+"correctAnswer":"A"
+}
+]
+
+Language: ${language}
+`;
+
+    while(retryCount < MAX_RETRIES){
+
+        try{
+
+            const timeoutPromise=(ms)=>new Promise((_,reject)=>
+                setTimeout(()=>reject(new Error("Timeout")),ms)
+            );
+
+            const result=await Promise.race([
+                model.generateContent(prompt),
+                timeoutPromise(30000)
+            ]);
+
+            const response=await result.response;
+
+            return JSON.parse(response.text());
+
+        }
+        catch(error){
+
+            retryCount++;
+            lastError=error;
+
+            if(retryCount>=MAX_RETRIES){
+                throw lastError;
+            }
+
+            await new Promise(r=>setTimeout(r,2000*retryCount));
+
+        }
+
+    }
+
+}
+module.exports = {
+    getGenerateQuestion,
+    generateQuestionExplanation,
+    generateVerificationQuestions,
+};
