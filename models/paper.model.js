@@ -10,18 +10,31 @@ const paperSchema = new mongoose.Schema(
     authorId: { type: String },
     author: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     file: { type: String },
-    questions: { type: [Object], default: [] }, // Supports different data structures
+
+    // Existing structure (Keep as it is)
+    questions: { type: [Object], default: [] },
     answers: { type: [Object], default: [] },
+
     children: { type: mongoose.Schema.Types.ObjectId, ref: "Child" },
     childrenId: { type: String },
     no_of_question: { type: String },
     className: { type: String },
     url: { type: String },
     otp: { type: Number },
-    topics: [{ type: String  }],
+
+    topics: [{ type: String }],
     topicLimit: { type: Number, default: 1, min: 0 },
     childLimit: { type: Number, default: 1, min: 0 },
+
     isExplanationGenerated: { type: Boolean, default: false },
+
+    // ===== NEW FIELD =====
+    paperStatus: {
+      type: String,
+      enum: ["Pending", "Completed"],
+      default: "Pending",
+    },
+
     isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }
