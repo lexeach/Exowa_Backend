@@ -345,23 +345,33 @@ exports.submitVerification = async (req, res) => {
         // Status
         //--------------------------------------------------
 
-        if (
-            verification.score ===
-            verification.totalQuestions
-        ) {
+       //--------------------------------------------------
+// Status
+//--------------------------------------------------
 
-            verification.status =
-                "Completed";
+if (
+    verification.score ===
+    verification.totalQuestions
+) {
 
-            verification.verifiedAt =
-                new Date();
+    verification.status = "Completed";
+    verification.verifiedAt = new Date();
 
-            //--------------------------------------------------
-            // Update Original Paper Status
-            //--------------------------------------------------
+} else {
 
-            //--------------------------------------------------
-// Check if all Learning Verifications are completed
+    verification.status = "Pending";
+    verification.verifiedAt = null;
+
+}
+
+//--------------------------------------------------
+// Save verification FIRST
+//--------------------------------------------------
+
+await verification.save();
+
+//--------------------------------------------------
+// Check if any pending verification exists
 //--------------------------------------------------
 
 const pendingVerification =
@@ -375,7 +385,11 @@ const pendingVerification =
 
     });
 
-if (!pendingVerification) {
+    //--------------------------------------------------
+    // Update Paper Status
+    //--------------------------------------------------
+
+    if (!pendingVerification) {
 
     await Paper.findByIdAndUpdate(
         verification.paper,
@@ -384,15 +398,16 @@ if (!pendingVerification) {
         }
     );
 
-}
+     } else {
 
-        } else {
-
-            verification.status =
-                "Pending";
-
+    await Paper.findByIdAndUpdate(
+        verification.paper,
+        {
+            paperStatus: "Pending",
         }
+    );
 
+    }
         //--------------------------------------------------
         // Attempt History
         //--------------------------------------------------
