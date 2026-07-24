@@ -274,11 +274,11 @@ const generateVerificationQuestions = async ({
     let retryCount = 0;
     let lastError = null;
 
-    const model = genAI.getGenerativeModel({
-        model: process.env.GEMINI_MODEL,
-        generationConfig: {
-            responseMimeType: "application/json"
-        }
+   const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash",
+    generationConfig: {
+        responseMimeType: "application/json"
+    }
     });
 
     const prompt = `
