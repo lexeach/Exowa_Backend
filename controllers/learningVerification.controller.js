@@ -360,12 +360,31 @@ exports.submitVerification = async (req, res) => {
             // Update Original Paper Status
             //--------------------------------------------------
 
-            await Paper.findByIdAndUpdate(
-                verification.paper,
-                {
-                    paperStatus: "Completed",
-                }
-            );
+            //--------------------------------------------------
+// Check if all Learning Verifications are completed
+//--------------------------------------------------
+
+const pendingVerification =
+    await LearningVerification.findOne({
+
+        paper: verification.paper,
+
+        createdBy: userId,
+
+        status: "Pending",
+
+    });
+
+if (!pendingVerification) {
+
+    await Paper.findByIdAndUpdate(
+        verification.paper,
+        {
+            paperStatus: "Completed",
+        }
+    );
+
+}
 
         } else {
 
