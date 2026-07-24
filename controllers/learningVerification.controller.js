@@ -221,6 +221,8 @@ exports.generateVerification = async (req, res) => {
 
     catch (error) {
 
+        
+
         console.error(error);
 
         return errorResponse(res, error);
@@ -441,6 +443,7 @@ exports.submitVerification = async (req, res) => {
  * Get Verification Status
  * ============================================================
  */
+
 
 exports.getVerificationStatus = async (req, res) => {
 
