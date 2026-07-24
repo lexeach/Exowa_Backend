@@ -368,7 +368,7 @@ if (
 // Save verification FIRST
 //--------------------------------------------------
 
-await verification.save();
+//await verification.save();
 
 //--------------------------------------------------
 // Check if any pending verification exists
