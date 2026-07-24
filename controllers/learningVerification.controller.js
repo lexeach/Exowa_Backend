@@ -15,7 +15,7 @@ const {
 /**
  * Generate Verification Paper
  */
-exports.generateVerificationPaper = async (req, res) => {
+exports.generateVerification = async (req, res) => {
 
     try {
 
