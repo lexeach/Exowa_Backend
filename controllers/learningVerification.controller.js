@@ -141,30 +141,30 @@ exports.generateVerification = async (req, res) => {
         // Existing Record
         //--------------------------------------------------
 
-        if (verification) {
+       if (verification) {
 
-            verification.questions = questions;
+    // If already completed, don't regenerate.
+    if (verification.status === "Completed") {
+        return successResponse(
+            res,
+            200,
+            "Verification already completed.",
+            verification
+        );
+    }
 
-            verification.learningContent =
-                explanation.explanation;
+    // Only regenerate if still pending
+    verification.questions = questions;
+    verification.learningContent = explanation.explanation;
+    verification.score = 0;
+    verification.scorePercentage = 0;
+    verification.submittedAt = null;
+    verification.verifiedAt = null;
+    verification.lastAttemptAt = new Date();
+    verification.attempts += 1;
 
-            verification.score = 0;
-
-            verification.scorePercentage = 0;
-
-            verification.status = "Pending";
-
-            verification.submittedAt = null;
-
-            verification.verifiedAt = null;
-
-            verification.lastAttemptAt = new Date();
-
-            verification.attempts += 1;
-
-            await verification.save();
-
-        }
+    await verification.save();
+}
 
         //--------------------------------------------------
         // Create New
