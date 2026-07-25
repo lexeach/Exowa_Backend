@@ -237,6 +237,17 @@ Return ONLY valid JSON.
         },
     },
 ];
+      for (const item of explanations) {
+    if (
+        !item.questionNumber ||
+        !item.explanation ||
+        !item.references
+    ) {
+        throw new Error("Invalid AI response structure");
+    }
+}
+
+return explanations;
       // Validate the response structure
       if (!parsedResponse.explanation || !parsedResponse.references) {
         throw new Error("Invalid response structure");
