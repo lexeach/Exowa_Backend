@@ -493,10 +493,23 @@ exports.questionAnswer = async (req, res) => {
     }
 
     if (questionNumbers.length > 0) {
-      setImmediate(() => {
-        generateExplanationsSequentially(responsePayload, questionNumbers);
-      });
+  setImmediate(async () => {
+    console.log(
+      "Starting background explanation generation",
+      questionNumbers
+    );
+
+    try {
+      await generateExplanationsSequentially(
+        responsePayload,
+        questionNumbers
+      );
+      console.log("Background explanation generation completed.");
+    } catch (err) {
+      console.error("Background explanation generation failed:", err);
     }
+  });
+}
 
     return successResponse(
       res,
