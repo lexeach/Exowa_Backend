@@ -256,17 +256,7 @@ Return ONLY valid JSON.
 }
 
 return explanations;
-      // Validate the response structure
-      if (!parsedResponse.explanation || !parsedResponse.references) {
-        throw new Error("Invalid response structure");
-      }
-
-      if (!parsedResponse.references.videos || !parsedResponse.references.articles || !parsedResponse.references.books) {
-        throw new Error("Missing reference categories");
-      }
-
-      return parsedResponse;
-
+     
     } catch (error) {
       retryCount++;
       lastError = error;
