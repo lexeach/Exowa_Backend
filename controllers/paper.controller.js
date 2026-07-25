@@ -48,7 +48,7 @@ const generateExplanationsSequentially = async (
   }
 
   const AI_REQUEST_DELAY =
-    Number(process.env.AI_REQUEST_DELAY_MS) || 3000;
+    Number(process.env.AI_REQUEST_DELAY_MS) || 70000;
 
   let explanationDoc;
   let allGenerated = true;
