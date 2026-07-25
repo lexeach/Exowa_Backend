@@ -222,7 +222,21 @@ Return ONLY valid JSON.
       const text = response.text();
 
       const parsedResponse = JSON.parse(text);
-      
+      const explanations = parsedResponse.questions || [
+    {
+        questionNumber: wrongQuestions[0]?.questionNumber,
+        explanation: parsedResponse.explanation,
+        summary: parsedResponse.summary || "",
+        learningObjective: parsedResponse.learningObjective || "",
+        keyConcepts: parsedResponse.keyConcepts || [],
+        verificationQuestions: parsedResponse.verificationQuestions || [],
+        references: parsedResponse.references || {
+            videos: [],
+            articles: [],
+            books: [],
+        },
+    },
+];
       // Validate the response structure
       if (!parsedResponse.explanation || !parsedResponse.references) {
         throw new Error("Invalid response structure");
