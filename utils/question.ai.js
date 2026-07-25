@@ -143,87 +143,60 @@ const specificQuestion =
     ? wrongQuestions[0]
     : null;
 
-  const prompt = specificQuestion 
-    ? `
-      Generate a comprehensive explanation and learning resources for this specific question:
-      
-      Subject: ${questionData.subject}
-      Syllabus: ${questionData.syllabus}
-      Class: ${questionData.className}
-      Chapters: ${questionData.chapter_from} 
-      Language: ${questionData.language}
-      Question Number: ${questionData.questionNumber}
-      
-      Question: ${specificQuestion.question}
-      Choices: ${JSON.stringify(specificQuestion.choices, null, 2)}
-      Correct Answer: ${specificQuestion.correctAnswer}
-      
-      Please provide:
-      1. A detailed explanation of the concept tested in this specific question
-      2. Step-by-step solution approach
-      3. Why the correct answer is right and why others are wrong
+  const prompt = `
+You are an experienced ${questionData.syllabus} teacher.
 
-      Return ONLY a valid JSON object in this exact format:
-      {
-        "explanation": "Detailed explanation of this specific question and the concept it tests...",
-        "references": {
-          "videos": [
-            "Video title or link 1",
-            "Video title or link 2"
-          ],
-          "articles": [
-            "Article title or link 1",
-            "Article title or link 2"
-          ],
-          "books": [
-            "Book title and author 1",
-            "Book title and author 2"
-          ]
-        }
-      }
-      
-      Make the explanation educational, comprehensive, and suitable for students of the specified class level.
-      Focus specifically on the concept tested in this question.
-    `
-    : `
-      Generate a comprehensive explanation and learning resources for the following question paper:
-      
-      Subject: ${questionData.subject}
-      Syllabus: ${questionData.syllabus}
-      Class: ${questionData.className}
-      Chapters: ${questionData.chapter_from} 
-      Language: ${questionData.language}
-      Number of Questions: ${questionData.no_of_question}
-      
-      Questions: ${JSON.stringify(questionData.questions, null, 2)}
-      
-      Please provide:
-      1. A detailed explanation of the concepts covered in these questions
-      2. Step-by-step solutions or approaches for understanding the topics
-      
-      Return ONLY a valid JSON object in this exact format:
-      {
-        "explanation": "Detailed explanation of the concepts and topics covered in these questions...",
-        "references": {
-          "videos": [
-            "Video title or link 1",
-            "Video title or link 2"
-          ],
-          "articles": [
-            "Article title or link 1",
-            "Article title or link 2"
-          ],
-          "books": [
-            "Book title and author 1",
-            "Book title and author 2"
-          ]
-        }
-      }
-      
-      Make the explanation educational, comprehensive, and suitable for students of the specified class level.
-      Ensure all references are relevant to the subject and syllabus.
-    `;
+Subject: ${questionData.subject}
+Class: ${questionData.className}
+Chapter: ${questionData.chapter_from}
+Language: ${questionData.language}
 
+The student answered the following questions incorrectly.
+
+${JSON.stringify(wrongQuestions, null, 2)}
+
+For EACH question generate:
+
+1. explanation
+2. summary
+3. learningObjective
+4. keyConcepts (5-10)
+5. exactly 10 verification questions
+6. learning references
+
+Return ONLY valid JSON.
+
+{
+  "questions":[
+    {
+      "questionNumber":1,
+      "explanation":"",
+      "summary":"",
+      "learningObjective":"",
+      "keyConcepts":[
+        ""
+      ],
+      "verificationQuestions":[
+        {
+          "question":"",
+          "choices":{
+            "A":"",
+            "B":"",
+            "C":"",
+            "D":""
+          },
+          "correctAnswer":"A"
+        }
+      ],
+      "references":{
+        "videos":[],
+        "articles":[],
+        "books":[]
+      }
+    }
+  ]
+}
+`;
     // add this on both condition 
     //   4. Learning resources including:
     //  - Educational videos (YouTube links or video titles)
