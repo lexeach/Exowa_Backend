@@ -111,6 +111,16 @@ const generateExplanationsSequentially = async (
             questionId: paperId,
             explanations: [newExplanation],
           }).save();
+			console.log(
+  "Saved explanation:",
+  explanationDoc._id,
+  questionNumber
+);
+
+console.log(
+  "Current explanations:",
+  explanationDoc.explanations.length
+);
         }
 
         console.log(
