@@ -157,7 +157,7 @@ Do not skip any question.
 
 Use the same questionNumber for every returned object.
 
-${JSON.stringify(wrongQuestions, null, 2)}
+${JSON.stringify(wrongQuestions)}
 
 For EACH question generate:
 
