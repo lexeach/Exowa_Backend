@@ -95,6 +95,13 @@ const generateExplanationsSequentially = async (
 
         const aiResponse =
           await generateQuestionExplanationAI(questionDataPayload);
+		  console.log(
+  "AI Response:",
+  JSON.stringify(aiResponse, null, 2)
+);
+
+console.log("Explanation:", aiResponse?.explanation);
+console.log("References:", aiResponse?.references);
 
         const newExplanation = {
           questionNumber,
