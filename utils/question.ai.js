@@ -151,7 +151,15 @@ Class: ${questionData.className}
 Chapter: ${questionData.chapter_from}
 Language: ${questionData.language}
 
-The student answered the following questions incorrectly.
+The following questions were answered incorrectly by the student.
+
+Generate one explanation object for EACH question.
+
+The output array length MUST exactly match the input array length.
+
+Do not skip any question.
+
+Use the same questionNumber for every returned object.
 
 ${JSON.stringify(wrongQuestions, null, 2)}
 
