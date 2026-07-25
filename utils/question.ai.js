@@ -243,12 +243,19 @@ Return ONLY valid JSON.
 ];
       for (const item of explanations) {
     if (
-        !item.questionNumber ||
-        !item.explanation ||
-        !item.references
-    ) {
-        throw new Error("Invalid AI response structure");
-    }
+    typeof item.questionNumber !== "number" ||
+    typeof item.explanation !== "string" ||
+    typeof item.summary !== "string" ||
+    typeof item.learningObjective !== "string" ||
+    !Array.isArray(item.keyConcepts) ||
+    !Array.isArray(item.verificationQuestions) ||
+    !item.references ||
+    !Array.isArray(item.references.videos) ||
+    !Array.isArray(item.references.articles) ||
+    !Array.isArray(item.references.books)
+) {
+    throw new Error("Invalid AI response structure");
+}
 }
 
 return explanations;
