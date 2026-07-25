@@ -258,7 +258,11 @@ Return ONLY valid JSON.
 }
 }
 
-return explanations;
+if (!Array.isArray(explanations) || explanations.length === 0) {
+    throw new Error("No explanation returned from AI");
+}
+
+return explanations[0];
      
     } catch (error) {
       retryCount++;
