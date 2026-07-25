@@ -138,10 +138,6 @@ const generateQuestionExplanation = async (questionData) => {
       : questionData.questions || []
   );
 
-const specificQuestion =
-  wrongQuestions.length === 1
-    ? wrongQuestions[0]
-    : null;
 
   const prompt = `
 You are an experienced ${questionData.syllabus} teacher.
