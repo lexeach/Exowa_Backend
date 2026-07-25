@@ -475,10 +475,18 @@ exports.questionAnswer = async (req, res) => {
       updatedPaper?.toObject ? updatedPaper.toObject() : updatedPaper;
 
     const questionNumbers = Array.isArray(answers)
-      ? answers
-          .map((answer) => answer?.questionNumber)
-          .filter((num) => num !== undefined && num !== null)
-      : [];
+  ? answers
+      .filter((answer) => {
+        const originalQuestion = paper.questions.find(
+          (q) => q.questionNumber === answer.questionNumber
+        );
+
+        if (!originalQuestion) return false;
+
+        return originalQuestion.correctAnswer !== answer.answer;
+      })
+      .map((answer) => answer.questionNumber)
+  : [];
 
     if (questionNumber && !questionNumbers.includes(questionNumber)) {
       questionNumbers.push(questionNumber);
