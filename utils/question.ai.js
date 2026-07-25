@@ -128,8 +128,19 @@ const generateQuestionExplanation = async (questionData) => {
   });
 
   // If questionNumber is provided, focus on that specific question
-  const specificQuestion = questionData.questionNumber && questionData.questions 
-    ? questionData.questions.find(q => q.questionNumber === questionData.questionNumber)
+  const wrongQuestions =
+  questionData.wrongQuestions ||
+  (
+    questionData.questionNumber && questionData.questions
+      ? questionData.questions.filter(
+          q => q.questionNumber === questionData.questionNumber
+        )
+      : questionData.questions || []
+  );
+
+const specificQuestion =
+  wrongQuestions.length === 1
+    ? wrongQuestions[0]
     : null;
 
   const prompt = specificQuestion 
