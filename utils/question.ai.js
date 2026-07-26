@@ -1,250 +1,367 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY);
 
+const getGenerateQuestion = async ({
+  className,
+  subject,
+  syllabus,
+  chapter_from,
+  //chapter_to,
+  language,
+  no_of_question,
+}) => {
+  // Input validation
+ 
+  if (!className || !subject || !syllabus || !chapter_from || !language) {
+  throw new Error("Missing required parameters");
+}
+
+  const MAX_RETRIES = 3;
+  let retryCount = 0;
+  let lastError = null;
+
+  const model = genAI.getGenerativeModel({ 
+    model: "gemini-3.5-flash",
+    generationConfig: {
+      responseMimeType: "application/json"
+    }
+  });
+
+  const numberOfQuestions = Number(no_of_question) || Number(process.env.NO_OF_QUESTIONS) || 10;
+  
+  const prompt = `
+    Generate exactly ${numberOfQuestions} multiple-choice questions for a ${subject} exam
+    for class ${className} based on the ${syllabus} syllabus from chapter ${chapter_from} .
+    Use ${language} language. Return ONLY a valid JSON array in this exact format:
+    [
+      {
+        "questionNumber": 1,
+        "question": "Question text here",
+        "choices": {
+          "A": "Option A text",
+          "B": "Option B text",
+          "C": "Option C text",
+          "D": "Option D text",
+          "E": "I don't know (translate this to ${language})"
+        },
+        "correctAnswer": "A" // Must be A, B, C, D, or E
+      }
+    ]
+    Do not include any text outside the JSON array. Ensure all questions follow this structure exactly.
+    For option E, translate "I don't know" to the appropriate text in ${language} language.
+  `;
+
+  while (retryCount < MAX_RETRIES) {
+    try {
+      console.log(`Attempt ${retryCount + 1}/${MAX_RETRIES} to generate questions...`);
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = (ms) => new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Request timeout")), ms)
+      );
+
+      const result = await Promise.race([
+        model.generateContent(prompt),
+        timeoutPromise(30000) // 30s timeout
+      ]);
+
+      const response = await result.response;
+      const text = response.text();
+
+      const parsedQuestions = JSON.parse(text);
+      
+      const isValidQuestion = (question) => {
+        return (
+          typeof question.questionNumber === "number" &&
+          typeof question.question === "string" &&
+          question.question.trim().length > 0 &&
+          typeof question.choices === "object" &&
+          ["A", "B", "C", "D", "E"].every(key => 
+            key in question.choices && 
+            typeof question.choices[key] === "string" &&
+            question.choices[key].trim().length > 0
+          ) &&
+          ["A", "B", "C", "D", "E"].includes(question.correctAnswer)
+        );
+      };
+
+      const validatedQuestions = parsedQuestions.filter(isValidQuestion);
+      
+      if (validatedQuestions.length === 0) {
+        throw new Error("No valid questions generated");
+      }
+
+      // Fallback mechanism for fewer questions
+      if (validatedQuestions.length < numberOfQuestions) {
+        console.warn(`Only ${validatedQuestions.length} valid questions generated out of ${numberOfQuestions} requested`);
+        return validatedQuestions; // Return what we have
+      }
+
+      return validatedQuestions;
+
+    } catch (error) {
+      retryCount++;
+      lastError = error;
+      console.error(`Error on attempt ${retryCount}: ${error.message}`);
+      
+      if (retryCount >= MAX_RETRIES) {
+        throw new Error(`Failed after ${MAX_RETRIES} attempts: ${lastError.message}`);
+      }
+
+      const delay = Math.pow(2, retryCount) * 1000;
+      console.log(`Waiting ${delay/1000}s before retry...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+};
 
 const generateQuestionExplanation = async (questionData) => {
   const MAX_RETRIES = 3;
   let retryCount = 0;
   let lastError = null;
 
-  const model = genAI.getGenerativeModel({
+  const model = genAI.getGenerativeModel({ 
     model: "gemini-3.5-flash",
     generationConfig: {
-      responseMimeType: "application/json",
-    },
+      responseMimeType: "application/json"
+    }
   });
 
-  // Get question list
+  // If questionNumber is provided, focus on that specific question
   const wrongQuestions =
-    questionData.wrongQuestions ||
-    (
-      questionData.questionNumber && questionData.questions
-        ? questionData.questions.filter(
-            (q) => q.questionNumber === questionData.questionNumber
-          )
-        : questionData.questions || []
-    );
+  questionData.wrongQuestions ||
+  (
+    questionData.questionNumber && questionData.questions
+      ? questionData.questions.filter(
+          q => q.questionNumber === questionData.questionNumber
+        )
+      : questionData.questions || []
+  );
 
-  if (!wrongQuestions.length) {
-    throw new Error("No question found for explanation generation.");
-  }
-
-  const question = wrongQuestions[0];
-  const subject = questionData.subject || "General";
 
   const prompt = `
-You are an expert ${subject} teacher.
+You are an experienced ${questionData.syllabus} teacher.
 
-Generate an explanation ONLY for the following question.
+Subject: ${questionData.subject}
+Class: ${questionData.className}
+Chapter: ${questionData.chapter_from}
+Language: ${questionData.language}
 
-Return ONLY valid JSON in the following format:
+The following questions were answered incorrectly by the student.
+
+Generate one explanation object for EACH question.
+
+The output array length MUST exactly match the input array length.
+
+Do not skip any question.
+
+Use the same questionNumber for every returned object.
+
+${JSON.stringify(wrongQuestions)}
+
+For EACH question generate:
+
+1. explanation
+2. summary
+3. learningObjective
+4. keyConcepts (5-10)
+5. exactly 10 verification questions
+6. learning references
+
+Return ONLY valid JSON.
 
 {
-  "questionNumber": ${question.questionNumber},
-  "explanation": "Detailed explanation",
-  "summary": "Short summary",
-  "learningObjective": "Student should learn...",
-  "keyConcepts": [
-    "Concept 1",
-    "Concept 2"
-  ],
-  "verificationQuestions": [
+  "questions":[
     {
-      "question": "",
-      "options": [
-        "Option A",
-        "Option B",
-        "Option C",
-        "Option D"
+      "questionNumber":1,
+      "explanation":"",
+      "summary":"",
+      "learningObjective":"",
+      "keyConcepts":[
+        ""
       ],
-      "correctAnswer": "A"
-    },
-    {
-      "question": "",
-      "options": [
-        "Option A",
-        "Option B",
-        "Option C",
-        "Option D"
+      "verificationQuestions":[
+        {
+          "question":"",
+          "choices":{
+            "A":"",
+            "B":"",
+            "C":"",
+            "D":""
+          },
+          "correctAnswer":"A"
+        }
       ],
-      "correctAnswer": "B"
+      "references":{
+        "videos":[],
+        "articles":[],
+        "books":[]
+      }
     }
-  ],
-  "references": {
-    "book": "",
-    "chapter": "",
-    "topic": ""
-  }
+  ]
 }
-
-Question:
-
-${JSON.stringify(question, null, 2)}
-
-Do not wrap JSON inside markdown.
-Do not add any explanation.
-Return JSON only.
 `;
+    // add this on both condition 
+    //   4. Learning resources including:
+    //  - Educational videos (YouTube links or video titles)
+    //  - Articles (online resources, study materials)
+    //  - Books (textbook recommendations, reference books)
 
   while (retryCount < MAX_RETRIES) {
     try {
-      console.log(
-        `Attempt ${retryCount + 1}/${MAX_RETRIES} to generate explanation...`
+      console.log(`Attempt ${retryCount + 1}/${MAX_RETRIES} to generate explanation...`);
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = (ms) => new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Request timeout")), ms)
       );
-
-      const timeoutPromise = (ms) =>
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Request timeout")), ms)
-        );
 
       const result = await Promise.race([
         model.generateContent(prompt),
-        timeoutPromise(45000),
+        timeoutPromise(45000) // 45s timeout for longer explanation
       ]);
 
       const response = await result.response;
+      
+      const text = response.text();
 
-      const text = response
-        .text()
-        .replace(/```json/g, "")
-        .replace(/```/g, "")
-        .trim();
+      const parsedResponse = JSON.parse(text);
+      const explanations = parsedResponse.questions || [
+    {
+        questionNumber: wrongQuestions[0]?.questionNumber,
+        explanation: parsedResponse.explanation,
+        summary: parsedResponse.summary || "",
+        learningObjective: parsedResponse.learningObjective || "",
+        keyConcepts: parsedResponse.keyConcepts || [],
+        verificationQuestions: parsedResponse.verificationQuestions || [],
+        references: parsedResponse.references || {
+            videos: [],
+            articles: [],
+            books: [],
+        },
+    },
+];
+      for (const item of explanations) {
+    if (
+    typeof item.questionNumber !== "number" ||
+    typeof item.explanation !== "string" ||
+    typeof item.summary !== "string" ||
+    typeof item.learningObjective !== "string" ||
+    !Array.isArray(item.keyConcepts) ||
+    !Array.isArray(item.verificationQuestions) ||
+    !item.references ||
+    !Array.isArray(item.references.videos) ||
+    !Array.isArray(item.references.articles) ||
+    !Array.isArray(item.references.books)
+) {
+    throw new Error("Invalid AI response structure");
+}
+}
 
-      const explanation = JSON.parse(text);
+if (!Array.isArray(explanations) || explanations.length === 0) {
+    throw new Error("No explanation returned from AI");
+}
 
-      if (!explanation.explanation) {
-        throw new Error("Invalid AI response.");
-      }
-
-      return explanation;
+return explanations[0];
+     
     } catch (error) {
       retryCount++;
       lastError = error;
-
-      console.error(
-        `Explanation generation failed (${retryCount}/${MAX_RETRIES})`,
-        error.message
-      );
-
+      console.error(`Error on attempt ${retryCount}: ${error.message}`);
+      
       if (retryCount >= MAX_RETRIES) {
-        throw new Error(
-          `Failed after ${MAX_RETRIES} attempts: ${lastError.message}`
-        );
+        throw new Error(`Failed after ${MAX_RETRIES} attempts: ${lastError.message}`);
       }
-const generateVerificationQuestions = async ({
-  explanation,
-  language,
-}) => {
-  const MAX_RETRIES = 3;
-  let retryCount = 0;
-  let lastError = null;
 
-  const model = genAI.getGenerativeModel({
+      const delay = Math.pow(2, retryCount) * 1000;
+      console.log(`Waiting ${delay/1000}s before retry...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+};
+const generateVerificationQuestions = async ({
+    explanation,
+    language
+}) => {
+
+    const MAX_RETRIES = 3;
+    let retryCount = 0;
+    let lastError = null;
+
+   const model = genAI.getGenerativeModel({
     model: "gemini-3.5-flash",
     generationConfig: {
-      responseMimeType: "application/json",
-    },
-  });
+        responseMimeType: "application/json"
+    }
+    });
 
-  const prompt = `
+    const prompt = `
 You are an expert teacher.
 
 Below is the learning content.
 
 ${explanation}
 
-Generate EXACTLY 3 NEW multiple-choice questions that verify whether the student has understood this topic.
+Generate EXACTLY 3 NEW multiple choice questions that test whether the student has understood this topic.
 
 Rules:
 
 - Questions must NOT copy the original question.
 - Questions must test the same concept.
 - Difficulty should be similar.
-- Use ${language} language.
-- Return ONLY valid JSON.
+- Return ONLY JSON.
 
 Format:
 
 [
-  {
-    "questionNumber": 1,
-    "question": "",
-    "choices": {
-      "A": "",
-      "B": "",
-      "C": "",
-      "D": ""
-    },
-    "correctAnswer": "A"
-  }
+{
+"questionNumber":1,
+"question":"...",
+"choices":{
+"A":"...",
+"B":"...",
+"C":"...",
+"D":"..."
+},
+"correctAnswer":"A"
+}
 ]
+
+Language: ${language}
 `;
 
-  while (retryCount < MAX_RETRIES) {
-    try {
-      console.log(
-        `Attempt ${retryCount + 1}/${MAX_RETRIES} to generate verification questions...`
-      );
+    while(retryCount < MAX_RETRIES){
 
-      const timeoutPromise = (ms) =>
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Request timeout")), ms)
-        );
+        try{
 
-      const result = await Promise.race([
-        model.generateContent(prompt),
-        timeoutPromise(30000),
-      ]);
+            const timeoutPromise=(ms)=>new Promise((_,reject)=>
+                setTimeout(()=>reject(new Error("Timeout")),ms)
+            );
 
-      const response = await result.response;
+            const result=await Promise.race([
+                model.generateContent(prompt),
+                timeoutPromise(30000)
+            ]);
 
-      const text = response
-        .text()
-        .replace(/```json/g, "")
-        .replace(/```/g, "")
-        .trim();
+            const response=await result.response;
 
-      const questions = JSON.parse(text);
+            return JSON.parse(response.text());
 
-      if (!Array.isArray(questions)) {
-        throw new Error("AI returned invalid verification questions.");
-      }
+        }
+        catch(error){
 
-      return questions;
-    } catch (error) {
-      retryCount++;
-      lastError = error;
+            retryCount++;
+            lastError=error;
 
-      console.error(
-        `Verification question generation failed (${retryCount}/${MAX_RETRIES})`,
-        error.message
-      );
+            if(retryCount>=MAX_RETRIES){
+                throw lastError;
+            }
 
-      if (retryCount >= MAX_RETRIES) {
-        throw new Error(
-          `Failed after ${MAX_RETRIES} attempts: ${lastError.message}`
-        );
-      }
+            await new Promise(r=>setTimeout(r,2000*retryCount));
 
-      const delay =
-        Number(process.env.AI_REQUEST_DELAY_MS) || 70000;
+        }
 
-      console.log(
-        `Waiting ${delay / 1000} seconds before retry...`
-      );
-
-      await new Promise((resolve) =>
-        setTimeout(resolve, delay)
-      );
     }
-  }
-//};            }
-
-         //   await new Promise(r=>setTimeout(r,2000*retryCount));
-
-     //   }
-
-    //}
 
 }
 module.exports = {
