@@ -11,7 +11,7 @@ const model = genAI.getGenerativeModel({
     }
 });
 
-async function generate(prompt) {
+async function generateJson(prompt){
 
     const result = await model.generateContent(prompt);
 
@@ -23,6 +23,6 @@ async function generate(prompt) {
 
 }
 
-module.exports = {
-    generate
+module.exports={
+    generateJson
 };

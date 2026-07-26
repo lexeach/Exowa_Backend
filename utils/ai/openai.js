@@ -24,7 +24,9 @@ const MODEL = "gpt-4.1-mini";
 
 async function generateJson(prompt) {
 
-    const response = await client.chat.completions.create({
+    const client = getClient();
+
+   const response = await client.chat.completions.create({
 
         model: MODEL,
 
