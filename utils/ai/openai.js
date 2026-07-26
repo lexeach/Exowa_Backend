@@ -1,4 +1,4 @@
-
+console.log("******** OPENAI.JS LOADED ********");
 
 const OpenAI = require("openai");
 

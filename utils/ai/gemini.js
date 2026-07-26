@@ -1,3 +1,4 @@
+console.log("******** gemini.JS LOADED ********");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const genAI = new GoogleGenerativeAI(
