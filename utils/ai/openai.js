@@ -20,7 +20,7 @@ function getClient() {
     return client;
 }
 
-const MODEL = "gpt-4.1-mini";
+const MODEL = "gpt-4o-mini";
 
 async function generateJson(prompt) {
 
