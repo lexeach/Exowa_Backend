@@ -18,16 +18,10 @@ const { generateOTP } = require("../utils/generate.otp");
 const EXPLANATION_PENDING_MESSAGE =
   "Explanation generation in progress. Please try again later.";
 
-const generateExplanationsSequentially = async (
-  paperData,
-  questionNumbers = []
-) => {
+const generateExplanationsSequentially = async (paperData, questionNumbers = []) => {
   const paper = paperData?.toObject ? paperData.toObject() : paperData;
-
   const paperId =
-    paper?._id?.toString?.() ||
-    paper?.id?.toString?.() ||
-    paper?.questionId;
+    paper?._id?.toString?.() || paper?.id?.toString?.() || paper?.questionId;
 
   if (!paper || !paperId) {
     console.error("Invalid paper data provided for explanation generation");
@@ -42,27 +36,16 @@ const generateExplanationsSequentially = async (
     ),
   ].sort((a, b) => a - b);
 
-  if (uniqueNumbers.length === 0) {
-    console.log("No questions require explanation generation.");
-    return;
-  }
-
-  const AI_REQUEST_DELAY =
-    Number(process.env.AI_REQUEST_DELAY_MS) || 70000;
-
   let explanationDoc;
-  let allGenerated = true;
-
   try {
-    console.log(
-      `Starting background explanation generation for paper ${paperId}`
-    );
-    console.log("Questions:", uniqueNumbers);
-
     explanationDoc = await QuestionExplanation.findOne({
       questionId: paperId,
       isDeleted: false,
     });
+
+    if (uniqueNumbers.length === 0) {
+      return;
+    }
 
     for (const questionNumber of uniqueNumbers) {
       const existingExplanation =
@@ -71,9 +54,6 @@ const generateExplanationsSequentially = async (
         );
 
       if (existingExplanation) {
-        console.log(
-          `Explanation already exists for question ${questionNumber}. Skipping.`
-        );
         continue;
       }
 
@@ -82,104 +62,49 @@ const generateExplanationsSequentially = async (
         syllabus: paper.syllabus,
         className: paper.className || paper.class,
         chapter_from: paper.chapter_from,
+        //chapter_to: paper.chapter_to,
         language: paper.language,
         no_of_question: paper.no_of_question,
         questions: paper.questions,
         questionNumber,
       };
 
+      let aiResponse;
+
       try {
-        console.log(
-          `Generating explanation for question ${questionNumber}...`
-        );
-
-        const aiResponse =
-          await generateQuestionExplanationAI(questionDataPayload);
-		  console.log(
-  "AI Response:",
-  JSON.stringify(aiResponse, null, 2)
-);
-
-console.log("Explanation:", aiResponse?.explanation);
-console.log("References:", aiResponse?.references);
-
-        const newExplanation = {
-          questionNumber,
-          explanation: aiResponse.explanation,
-          references: aiResponse.references,
-          generatedAt: new Date(),
-        };
-
-        if (explanationDoc) {
-          explanationDoc.explanations.push(newExplanation);
-          explanationDoc = await explanationDoc.save();
-        } else {
-          explanationDoc = await new QuestionExplanation({
-            questionId: paperId,
-            explanations: [newExplanation],
-          }).save();
-			console.log(
-  "Saved explanation:",
-  explanationDoc._id,
-  questionNumber
-);
-
-console.log(
-  "Current explanations:",
-  explanationDoc.explanations.length
-);
-        }
-
-        console.log(
-          `Explanation saved successfully for question ${questionNumber}.`
-        );
+        aiResponse = await generateQuestionExplanationAI(questionDataPayload);
       } catch (error) {
-        allGenerated = false;
-
         console.error(
           `Failed to generate explanation for question ${questionNumber} of paper ${paperId}:`,
           error
         );
-
-        // If quota is exhausted, stop processing remaining questions.
-        if (
-          error?.message?.includes("429") ||
-          error?.message?.includes("Quota exceeded")
-        ) {
-          console.log(
-            "Gemini quota exhausted. Stopping further explanation generation."
-          );
-          break;
-        }
+        continue;
       }
 
-      // Delay before next Gemini request
-      console.log(
-        `Waiting ${AI_REQUEST_DELAY}ms before next AI request...`
-      );
+      const newExplanation = {
+        questionNumber,
+        explanation: aiResponse.explanation,
+        references: aiResponse.references,
+        generatedAt: new Date(),
+      };
 
-      await new Promise((resolve) =>
-        setTimeout(resolve, AI_REQUEST_DELAY)
-      );
+      if (explanationDoc) {
+        explanationDoc.explanations.push(newExplanation);
+        explanationDoc = await explanationDoc.save();
+      } else {
+        explanationDoc = await new QuestionExplanation({
+          questionId: paperId,
+          explanations: [newExplanation],
+        }).save();
+      }
     }
   } catch (error) {
-    allGenerated = false;
-
-    console.error(
-      "Error during background explanation generation:",
-      error
-    );
+    console.error("Error during background explanation generation:", error);
   } finally {
     try {
       await Paper.findByIdAndUpdate(paperId, {
-        isExplanationGenerated: allGenerated,
+        isExplanationGenerated: true,
       });
-
-      console.log(
-        `Background explanation generation finished for paper ${paperId}. Status: ${
-          allGenerated ? "Completed" : "Partial/Failed"
-        }`
-      );
     } catch (updateError) {
       console.error(
         `Failed to update explanation status for paper ${paperId}:`,
@@ -550,41 +475,20 @@ exports.questionAnswer = async (req, res) => {
       updatedPaper?.toObject ? updatedPaper.toObject() : updatedPaper;
 
     const questionNumbers = Array.isArray(answers)
-  ? answers
-      .filter((answer) => {
-        const originalQuestion = paper.questions.find(
-          (q) => q.questionNumber === answer.questionNumber
-        );
-
-        if (!originalQuestion) return false;
-
-        return originalQuestion.correctAnswer !== answer.answer;
-      })
-      .map((answer) => answer.questionNumber)
-  : [];
+      ? answers
+          .map((answer) => answer?.questionNumber)
+          .filter((num) => num !== undefined && num !== null)
+      : [];
 
     if (questionNumber && !questionNumbers.includes(questionNumber)) {
       questionNumbers.push(questionNumber);
     }
 
     if (questionNumbers.length > 0) {
-  setImmediate(async () => {
-    console.log(
-      "Starting background explanation generation",
-      questionNumbers
-    );
-
-    try {
-      await generateExplanationsSequentially(
-        responsePayload,
-        questionNumbers
-      );
-      console.log("Background explanation generation completed.");
-    } catch (err) {
-      console.error("Background explanation generation failed:", err);
+      setImmediate(() => {
+        generateExplanationsSequentially(responsePayload, questionNumbers);
+      });
     }
-  });
-}
 
     return successResponse(
       res,

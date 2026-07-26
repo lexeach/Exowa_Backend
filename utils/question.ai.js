@@ -1,4 +1,6 @@
-const ai = require("./ai/provider");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY);
+
 const getGenerateQuestion = async ({
   className,
   subject,
@@ -18,7 +20,13 @@ const getGenerateQuestion = async ({
   let retryCount = 0;
   let lastError = null;
 
-  
+  const model = genAI.getGenerativeModel({ 
+    model: "gemini-2.5-flash",
+    generationConfig: {
+      responseMimeType: "application/json"
+    }
+  });
+
   const numberOfQuestions = Number(no_of_question) || Number(process.env.NO_OF_QUESTIONS) || 10;
   
   const prompt = `
@@ -52,14 +60,16 @@ const getGenerateQuestion = async ({
         setTimeout(() => reject(new Error("Request timeout")), ms)
       );
 
-      const parsedQuestions = await ai.generateQuestions({
-    className,
-    subject,
-    syllabus,
-    chapter_from,
-    language,
-    no_of_question
-});      
+      const result = await Promise.race([
+        model.generateContent(prompt),
+        timeoutPromise(30000) // 30s timeout
+      ]);
+
+      const response = await result.response;
+      const text = response.text();
+
+      const parsedQuestions = JSON.parse(text);
+      
       const isValidQuestion = (question) => {
         return (
           typeof question.questionNumber === "number" &&
@@ -110,81 +120,99 @@ const generateQuestionExplanation = async (questionData) => {
   let retryCount = 0;
   let lastError = null;
 
- 
-  // If questionNumber is provided, focus on that specific question
-  const wrongQuestions =
-  questionData.wrongQuestions ||
-  (
-    questionData.questionNumber && questionData.questions
-      ? questionData.questions.filter(
-          q => q.questionNumber === questionData.questionNumber
-        )
-      : questionData.questions || []
-  );
-
-
-  const prompt = `
-You are an experienced ${questionData.syllabus} teacher.
-
-Subject: ${questionData.subject}
-Class: ${questionData.className}
-Chapter: ${questionData.chapter_from}
-Language: ${questionData.language}
-
-The following questions were answered incorrectly by the student.
-
-Generate one explanation object for EACH question.
-
-The output array length MUST exactly match the input array length.
-
-Do not skip any question.
-
-Use the same questionNumber for every returned object.
-
-${JSON.stringify(wrongQuestions)}
-
-For EACH question generate:
-
-1. explanation
-2. summary
-3. learningObjective
-4. keyConcepts (5-10)
-5. exactly 10 verification questions
-6. learning references
-
-Return ONLY valid JSON.
-
-{
-  "questions":[
-    {
-      "questionNumber":1,
-      "explanation":"",
-      "summary":"",
-      "learningObjective":"",
-      "keyConcepts":[
-        ""
-      ],
-      "verificationQuestions":[
-        {
-          "question":"",
-          "choices":{
-            "A":"",
-            "B":"",
-            "C":"",
-            "D":""
-          },
-          "correctAnswer":"A"
-        }
-      ],
-      "references":{
-        "videos":[],
-        "articles":[],
-        "books":[]
-      }
+  const model = genAI.getGenerativeModel({ 
+    model: "gemini-2.5-flash",
+    generationConfig: {
+      responseMimeType: "application/json"
     }
-  ]
-}
-`;
+  });
+
+  // If questionNumber is provided, focus on that specific question
+  const specificQuestion = questionData.questionNumber && questionData.questions 
+    ? questionData.questions.find(q => q.questionNumber === questionData.questionNumber)
+    : null;
+
+  const prompt = specificQuestion 
+    ? `
+      Generate a comprehensive explanation and learning resources for this specific question:
+      
+      Subject: ${questionData.subject}
+      Syllabus: ${questionData.syllabus}
+      Class: ${questionData.className}
+      Chapters: ${questionData.chapter_from} 
+      Language: ${questionData.language}
+      Question Number: ${questionData.questionNumber}
+      
+      Question: ${specificQuestion.question}
+      Choices: ${JSON.stringify(specificQuestion.choices, null, 2)}
+      Correct Answer: ${specificQuestion.correctAnswer}
+      
+      Please provide:
+      1. A detailed explanation of the concept tested in this specific question
+      2. Step-by-step solution approach
+      3. Why the correct answer is right and why others are wrong
+
+      Return ONLY a valid JSON object in this exact format:
+      {
+        "explanation": "Detailed explanation of this specific question and the concept it tests...",
+        "references": {
+          "videos": [
+            "Video title or link 1",
+            "Video title or link 2"
+          ],
+          "articles": [
+            "Article title or link 1",
+            "Article title or link 2"
+          ],
+          "books": [
+            "Book title and author 1",
+            "Book title and author 2"
+          ]
+        }
+      }
+      
+      Make the explanation educational, comprehensive, and suitable for students of the specified class level.
+      Focus specifically on the concept tested in this question.
+    `
+    : `
+      Generate a comprehensive explanation and learning resources for the following question paper:
+      
+      Subject: ${questionData.subject}
+      Syllabus: ${questionData.syllabus}
+      Class: ${questionData.className}
+      Chapters: ${questionData.chapter_from} 
+      Language: ${questionData.language}
+      Number of Questions: ${questionData.no_of_question}
+      
+      Questions: ${JSON.stringify(questionData.questions, null, 2)}
+      
+      Please provide:
+      1. A detailed explanation of the concepts covered in these questions
+      2. Step-by-step solutions or approaches for understanding the topics
+      
+      Return ONLY a valid JSON object in this exact format:
+      {
+        "explanation": "Detailed explanation of the concepts and topics covered in these questions...",
+        "references": {
+          "videos": [
+            "Video title or link 1",
+            "Video title or link 2"
+          ],
+          "articles": [
+            "Article title or link 1",
+            "Article title or link 2"
+          ],
+          "books": [
+            "Book title and author 1",
+            "Book title and author 2"
+          ]
+        }
+      }
+      
+      Make the explanation educational, comprehensive, and suitable for students of the specified class level.
+      Ensure all references are relevant to the subject and syllabus.
+    `;
+
     // add this on both condition 
     //   4. Learning resources including:
     //  - Educational videos (YouTube links or video titles)
@@ -200,48 +228,28 @@ Return ONLY valid JSON.
         setTimeout(() => reject(new Error("Request timeout")), ms)
       );
 
- const parsedResponse = await ai.generateExplanation({
-    ...questionData,
-    wrongQuestions
-});
-      const explanations = parsedResponse.questions || [
-    {
-        questionNumber: wrongQuestions[0]?.questionNumber,
-        explanation: parsedResponse.explanation,
-        summary: parsedResponse.summary || "",
-        learningObjective: parsedResponse.learningObjective || "",
-        keyConcepts: parsedResponse.keyConcepts || [],
-        verificationQuestions: parsedResponse.verificationQuestions || [],
-        references: parsedResponse.references || {
-            videos: [],
-            articles: [],
-            books: [],
-        },
-    },
-];
-      for (const item of explanations) {
-    if (
-    typeof item.questionNumber !== "number" ||
-    typeof item.explanation !== "string" ||
-    typeof item.summary !== "string" ||
-    typeof item.learningObjective !== "string" ||
-    !Array.isArray(item.keyConcepts) ||
-    !Array.isArray(item.verificationQuestions) ||
-    !item.references ||
-    !Array.isArray(item.references.videos) ||
-    !Array.isArray(item.references.articles) ||
-    !Array.isArray(item.references.books)
-) {
-    throw new Error("Invalid AI response structure");
-}
-}
+      const result = await Promise.race([
+        model.generateContent(prompt),
+        timeoutPromise(45000) // 45s timeout for longer explanation
+      ]);
 
-if (!Array.isArray(explanations) || explanations.length === 0) {
-    throw new Error("No explanation returned from AI");
-}
+      const response = await result.response;
+      
+      const text = response.text();
 
-return explanations[0];
-     
+      const parsedResponse = JSON.parse(text);
+      
+      // Validate the response structure
+      if (!parsedResponse.explanation || !parsedResponse.references) {
+        throw new Error("Invalid response structure");
+      }
+
+      if (!parsedResponse.references.videos || !parsedResponse.references.articles || !parsedResponse.references.books) {
+        throw new Error("Missing reference categories");
+      }
+
+      return parsedResponse;
+
     } catch (error) {
       retryCount++;
       lastError = error;
@@ -266,7 +274,13 @@ const generateVerificationQuestions = async ({
     let retryCount = 0;
     let lastError = null;
 
-  
+   const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash",
+    generationConfig: {
+        responseMimeType: "application/json"
+    }
+    });
+
     const prompt = `
 You are an expert teacher.
 
@@ -310,10 +324,14 @@ Language: ${language}
                 setTimeout(()=>reject(new Error("Timeout")),ms)
             );
 
-            return await ai.generateVerificationQuestions({
-    explanation,
-    language
-});
+            const result=await Promise.race([
+                model.generateContent(prompt),
+                timeoutPromise(30000)
+            ]);
+
+            const response=await result.response;
+
+            return JSON.parse(response.text());
 
         }
         catch(error){
