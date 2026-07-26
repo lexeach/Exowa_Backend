@@ -120,31 +120,37 @@ const generateQuestionExplanation = async (questionData) => {
   let retryCount = 0;
   let lastError = null;
 
-  const model = genAI.getGenerativeModel({ 
+  const model = genAI.getGenerativeModel({
     model: "gemini-3.5-flash",
     generationConfig: {
-      responseMimeType: "application/json"
-    }
+      responseMimeType: "application/json",
+    },
   });
 
-  // If questionNumber is provided, focus on that specific question
+  // Get question list
   const wrongQuestions =
-  questionData.wrongQuestions ||
-  (
-    questionData.questionNumber && questionData.questions
-      ? questionData.questions.filter(
-          q => q.questionNumber === questionData.questionNumber
-        )
-      : questionData.questions || []
-  );
+    questionData.wrongQuestions ||
+    (
+      questionData.questionNumber && questionData.questions
+        ? questionData.questions.filter(
+            (q) => q.questionNumber === questionData.questionNumber
+          )
+        : questionData.questions || []
+    );
 
+  if (!wrongQuestions.length) {
+    throw new Error("No question found for explanation generation.");
+  }
 
- const prompt = `
+  const question = wrongQuestions[0];
+  const subject = questionData.subject || "General";
+
+  const prompt = `
 You are an expert ${subject} teacher.
 
 Generate an explanation ONLY for the following question.
 
-Return ONLY valid JSON.
+Return ONLY valid JSON in the following format:
 
 {
   "questionNumber": ${question.questionNumber},
@@ -159,20 +165,20 @@ Return ONLY valid JSON.
     {
       "question": "",
       "options": [
-        "A",
-        "B",
-        "C",
-        "D"
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
       ],
       "correctAnswer": "A"
     },
     {
       "question": "",
       "options": [
-        "A",
-        "B",
-        "C",
-        "D"
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
       ],
       "correctAnswer": "B"
     }
@@ -188,63 +194,66 @@ Question:
 
 ${JSON.stringify(question, null, 2)}
 
-Do not wrap in markdown.
-Do not add extra text.
+Do not wrap JSON inside markdown.
+Do not add any explanation.
 Return JSON only.
 `;
-    // add this on both condition 
-    //   4. Learning resources including:
-    //  - Educational videos (YouTube links or video titles)
-    //  - Articles (online resources, study materials)
-    //  - Books (textbook recommendations, reference books)
 
   while (retryCount < MAX_RETRIES) {
     try {
-      console.log(`Attempt ${retryCount + 1}/${MAX_RETRIES} to generate explanation...`);
-      
-      // Add timeout to prevent hanging
-      const timeoutPromise = (ms) => new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Request timeout")), ms)
+      console.log(
+        `Attempt ${retryCount + 1}/${MAX_RETRIES} to generate explanation...`
       );
+
+      const timeoutPromise = (ms) =>
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Request timeout")), ms)
+        );
 
       const result = await Promise.race([
         model.generateContent(prompt),
-        timeoutPromise(45000) // 45s timeout for longer explanation
+        timeoutPromise(45000),
       ]);
 
       const response = await result.response;
-      
-      const text = response.text();
 
-      const parsedResponse = JSON.parse(text);
-      const response = await model.generateContent(prompt);
+      const text = response
+        .text()
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
 
-     const text = response.response.text()
-    .replace(/```json/g, "")
-    .replace(/```/g, "")
-    .trim();
+      const explanation = JSON.parse(text);
 
-const explanation = JSON.parse(text);
+      if (!explanation.explanation) {
+        throw new Error("Invalid AI response.");
+      }
 
-return explanation;
-     
-     
+      return explanation;
     } catch (error) {
       retryCount++;
       lastError = error;
-      console.error(`Error on attempt ${retryCount}: ${error.message}`);
-      
+
+      console.error(
+        `Explanation generation failed (${retryCount}/${MAX_RETRIES})`,
+        error.message
+      );
+
       if (retryCount >= MAX_RETRIES) {
-        throw new Error(`Failed after ${MAX_RETRIES} attempts: ${lastError.message}`);
+        throw new Error(
+          `Failed after ${MAX_RETRIES} attempts: ${lastError.message}`
+        );
       }
 
-      const delay = Math.pow(2, retryCount) * 1000;
-      console.log(`Waiting ${delay/1000}s before retry...`);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      const delay =
+        Number(process.env.AI_REQUEST_DELAY_MS) || 70000;
+
+      console.log(`Waiting ${delay / 1000} seconds before retry...`);
+
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
-};
-const generateVerificationQuestions = async ({
+};const generateVerificationQuestions = async ({
     explanation,
     language
 }) => {
