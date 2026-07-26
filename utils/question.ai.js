@@ -217,6 +217,16 @@ Return JSON only.
       const text = response.text();
 
       const parsedResponse = JSON.parse(text);
+      const response = await model.generateContent(prompt);
+
+     const text = response.response.text()
+    .replace(/```json/g, "")
+    .replace(/```/g, "")
+    .trim();
+
+const explanation = JSON.parse(text);
+
+return explanation;
      
      
     } catch (error) {
