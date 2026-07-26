@@ -585,22 +585,22 @@ exports.questionAnswer = async (req, res) => {
     }
 
     if (questionNumbers.length > 0) {
-  setImmediate(async () => {
-    console.log(
-      "Starting background explanation generation",
-      questionNumbers
-    );
+ setImmediate(async () => {
 
     try {
-      await generateExplanationsSequentially(
-        responsePayload,
-        questionNumbers
-      );
-      console.log("Background explanation generation completed.");
+
+        await generateExplanationsSequentially(
+            responsePayload,
+            questionNumbers
+        );
+
     } catch (err) {
-      console.error("Background explanation generation failed:", err);
+
+        console.error(err);
+
     }
-  });
+
+});
 }
 
     return successResponse(
