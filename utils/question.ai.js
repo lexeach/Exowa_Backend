@@ -1,7 +1,7 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY);
 
-};
+
 const generateQuestionExplanation = async (questionData) => {
   const MAX_RETRIES = 3;
   let retryCount = 0;
@@ -238,13 +238,13 @@ Format:
       );
     }
   }
-};            }
+//};            }
 
-            await new Promise(r=>setTimeout(r,2000*retryCount));
+         //   await new Promise(r=>setTimeout(r,2000*retryCount));
 
-        }
+     //   }
 
-    }
+    //}
 
 }
 module.exports = {
