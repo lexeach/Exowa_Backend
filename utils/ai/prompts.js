@@ -9,110 +9,139 @@ const buildQuestionPrompt = ({
     syllabus,
     chapter_from,
     language,
-    no_of_question
+    numberOfQuestions
 }) => {
 
-    const totalQuestions = Number(no_of_question) || 10;
-
     return `
-Generate exactly ${totalQuestions} multiple-choice questions.
+Generate exactly ${numberOfQuestions} multiple-choice questions for a ${subject} exam
+for class ${className} based on the ${syllabus} syllabus from chapter ${chapter_from}.
 
-Subject: ${subject}
-Class: ${className}
-Board: ${syllabus}
-Chapter: ${chapter_from}
-Language: ${language}
+Use ${language} language.
 
-Return ONLY valid JSON.
+Return ONLY a valid JSON array.
 
 [
-{
-    "questionNumber":1,
-    "question":"Question",
-    "choices":{
-        "A":"Option A",
-        "B":"Option B",
-        "C":"Option C",
-        "D":"Option D",
-        "E":"I don't know"
+  {
+    "questionNumber": 1,
+    "question": "Question text here",
+    "choices": {
+      "A": "Option A text",
+      "B": "Option B text",
+      "C": "Option C text",
+      "D": "Option D text",
+      "E": "I don't know (translated into ${language})"
     },
-    "correctAnswer":"A"
-}
+    "correctAnswer": "A"
+  }
 ]
 
-Rules:
+Rules
 
-1. Exactly ${totalQuestions} questions.
-2. Every question must have A,B,C,D,E.
-3. Option E means "I don't know" translated into ${language}.
+1. Generate exactly ${numberOfQuestions} questions.
+2. Every question must have A, B, C, D and E.
+3. Option E must be "I don't know" translated into ${language}.
 4. Correct answer must be A/B/C/D/E.
 5. No markdown.
 6. No explanation.
 7. No extra text.
-8. Return JSON only.
+8. Return only valid JSON.
 `;
 };
 
 const buildExplanationPrompt = ({
-    wrongQuestions,
-    className,
-    subject,
-    syllabus,
-    chapter_from,
-    language
+    questionData,
+    specificQuestion
 }) => {
 
-    return `
-You are an experienced ${syllabus} teacher.
+    if (specificQuestion) {
 
-Subject : ${subject}
-Class : ${className}
-Chapter : ${chapter_from}
-Language : ${language}
+        return `
+Generate a comprehensive explanation and learning resources for this specific question.
 
-Student answered these questions incorrectly.
+Subject: ${questionData.subject}
+Board: ${questionData.syllabus}
+Class: ${questionData.className}
+Chapter: ${questionData.chapter_from}
+Language: ${questionData.language}
 
-${JSON.stringify(wrongQuestions)}
+Question Number: ${questionData.questionNumber}
 
-Generate ONE explanation object for EACH question.
+Question:
+${specificQuestion.question}
+
+Choices:
+${JSON.stringify(specificQuestion.choices, null, 2)}
+
+Correct Answer:
+${specificQuestion.correctAnswer}
 
 Return ONLY valid JSON.
 
 {
-"questions":[
-{
-"questionNumber":1,
-"explanation":"",
-"summary":"",
-"learningObjective":"",
-"keyConcepts":[
-""
-],
-"verificationQuestions":[
-{
-"question":"",
-"choices":{
-"A":"",
-"B":"",
-"C":"",
-"D":""
-},
-"correctAnswer":"A"
-}
-],
-"references":{
-"videos":[],
-"articles":[],
-"books":[]
-}
-}
-]
+    "explanation":"Detailed explanation",
+    "references":{
+        "videos":[
+            "Video 1",
+            "Video 2"
+        ],
+        "articles":[
+            "Article 1",
+            "Article 2"
+        ],
+        "books":[
+            "Book 1",
+            "Book 2"
+        ]
+    }
 }
 
 Rules
 
-- Output length must equal input length.
-- Do not skip any question.
+- Explain why the correct answer is correct.
+- Explain why the other options are incorrect.
+- Keep language suitable for Class ${questionData.className}.
+- JSON only.
+`;
+
+    }
+
+    return `
+Generate a comprehensive explanation and learning resources for the following question paper.
+
+Subject: ${questionData.subject}
+Board: ${questionData.syllabus}
+Class: ${questionData.className}
+Chapter: ${questionData.chapter_from}
+Language: ${questionData.language}
+
+Questions:
+
+${JSON.stringify(questionData.questions, null, 2)}
+
+Return ONLY valid JSON.
+
+{
+    "explanation":"Detailed explanation",
+    "references":{
+        "videos":[
+            "Video 1",
+            "Video 2"
+        ],
+        "articles":[
+            "Article 1",
+            "Article 2"
+        ],
+        "books":[
+            "Book 1",
+            "Book 2"
+        ]
+    }
+}
+
+Rules
+
+- Explain all concepts.
+- Suitable for Class ${questionData.className}.
 - JSON only.
 `;
 };
@@ -123,34 +152,36 @@ const buildVerificationPrompt = ({
 }) => {
 
     return `
+You are an expert teacher.
+
 Below is the learning explanation.
 
 ${explanation}
 
-Generate EXACTLY 3 NEW MCQ questions.
+Generate EXACTLY 3 NEW multiple-choice questions.
 
 Rules
 
-- Same concept.
-- Different wording.
-- Similar difficulty.
-- JSON only.
+- Questions must NOT copy the original question.
+- Questions must test the same concept.
+- Difficulty should be similar.
+- Return ONLY JSON.
 
 [
-{
-"questionNumber":1,
-"question":"",
-"choices":{
-"A":"",
-"B":"",
-"C":"",
-"D":""
-},
-"correctAnswer":"A"
-}
+    {
+        "questionNumber":1,
+        "question":"Question text",
+        "choices":{
+            "A":"Option A",
+            "B":"Option B",
+            "C":"Option C",
+            "D":"Option D"
+        },
+        "correctAnswer":"A"
+    }
 ]
 
-Language : ${language}
+Language: ${language}
 `;
 };
 

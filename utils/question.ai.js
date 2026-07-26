@@ -1,5 +1,10 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY);
+const ai = require("./ai/provider");
+
+const {
+    buildQuestionPrompt,
+    buildExplanationPrompt,
+    buildVerificationPrompt
+} = require("./ai/prompts");
 
 const getGenerateQuestion = async ({
   className,
@@ -20,37 +25,17 @@ const getGenerateQuestion = async ({
   let retryCount = 0;
   let lastError = null;
 
-  const model = genAI.getGenerativeModel({ 
-    model: "gemini-2.5-flash",
-    generationConfig: {
-      responseMimeType: "application/json"
-    }
-  });
-
+  
   const numberOfQuestions = Number(no_of_question) || Number(process.env.NO_OF_QUESTIONS) || 10;
   
-  const prompt = `
-    Generate exactly ${numberOfQuestions} multiple-choice questions for a ${subject} exam
-    for class ${className} based on the ${syllabus} syllabus from chapter ${chapter_from} .
-    Use ${language} language. Return ONLY a valid JSON array in this exact format:
-    [
-      {
-        "questionNumber": 1,
-        "question": "Question text here",
-        "choices": {
-          "A": "Option A text",
-          "B": "Option B text",
-          "C": "Option C text",
-          "D": "Option D text",
-          "E": "I don't know (translate this to ${language})"
-        },
-        "correctAnswer": "A" // Must be A, B, C, D, or E
-      }
-    ]
-    Do not include any text outside the JSON array. Ensure all questions follow this structure exactly.
-    For option E, translate "I don't know" to the appropriate text in ${language} language.
-  `;
-
+  const prompt = buildQuestionPrompt({
+    className,
+    subject,
+    syllabus,
+    chapter_from,
+    language,
+    numberOfQuestions
+});
   while (retryCount < MAX_RETRIES) {
     try {
       console.log(`Attempt ${retryCount + 1}/${MAX_RETRIES} to generate questions...`);
@@ -60,15 +45,10 @@ const getGenerateQuestion = async ({
         setTimeout(() => reject(new Error("Request timeout")), ms)
       );
 
-      const result = await Promise.race([
-        model.generateContent(prompt),
-        timeoutPromise(30000) // 30s timeout
-      ]);
-
-      const response = await result.response;
-      const text = response.text();
-
-      const parsedQuestions = JSON.parse(text);
+     const parsedQuestions = await Promise.race([
+    ai.generateJson(prompt),
+    timeoutPromise(30000)
+]);
       
       const isValidQuestion = (question) => {
         return (
@@ -120,99 +100,17 @@ const generateQuestionExplanation = async (questionData) => {
   let retryCount = 0;
   let lastError = null;
 
-  const model = genAI.getGenerativeModel({ 
-    model: "gemini-2.5-flash",
-    generationConfig: {
-      responseMimeType: "application/json"
-    }
-  });
+  
 
   // If questionNumber is provided, focus on that specific question
   const specificQuestion = questionData.questionNumber && questionData.questions 
     ? questionData.questions.find(q => q.questionNumber === questionData.questionNumber)
     : null;
 
-  const prompt = specificQuestion 
-    ? `
-      Generate a comprehensive explanation and learning resources for this specific question:
-      
-      Subject: ${questionData.subject}
-      Syllabus: ${questionData.syllabus}
-      Class: ${questionData.className}
-      Chapters: ${questionData.chapter_from} 
-      Language: ${questionData.language}
-      Question Number: ${questionData.questionNumber}
-      
-      Question: ${specificQuestion.question}
-      Choices: ${JSON.stringify(specificQuestion.choices, null, 2)}
-      Correct Answer: ${specificQuestion.correctAnswer}
-      
-      Please provide:
-      1. A detailed explanation of the concept tested in this specific question
-      2. Step-by-step solution approach
-      3. Why the correct answer is right and why others are wrong
-
-      Return ONLY a valid JSON object in this exact format:
-      {
-        "explanation": "Detailed explanation of this specific question and the concept it tests...",
-        "references": {
-          "videos": [
-            "Video title or link 1",
-            "Video title or link 2"
-          ],
-          "articles": [
-            "Article title or link 1",
-            "Article title or link 2"
-          ],
-          "books": [
-            "Book title and author 1",
-            "Book title and author 2"
-          ]
-        }
-      }
-      
-      Make the explanation educational, comprehensive, and suitable for students of the specified class level.
-      Focus specifically on the concept tested in this question.
-    `
-    : `
-      Generate a comprehensive explanation and learning resources for the following question paper:
-      
-      Subject: ${questionData.subject}
-      Syllabus: ${questionData.syllabus}
-      Class: ${questionData.className}
-      Chapters: ${questionData.chapter_from} 
-      Language: ${questionData.language}
-      Number of Questions: ${questionData.no_of_question}
-      
-      Questions: ${JSON.stringify(questionData.questions, null, 2)}
-      
-      Please provide:
-      1. A detailed explanation of the concepts covered in these questions
-      2. Step-by-step solutions or approaches for understanding the topics
-      
-      Return ONLY a valid JSON object in this exact format:
-      {
-        "explanation": "Detailed explanation of the concepts and topics covered in these questions...",
-        "references": {
-          "videos": [
-            "Video title or link 1",
-            "Video title or link 2"
-          ],
-          "articles": [
-            "Article title or link 1",
-            "Article title or link 2"
-          ],
-          "books": [
-            "Book title and author 1",
-            "Book title and author 2"
-          ]
-        }
-      }
-      
-      Make the explanation educational, comprehensive, and suitable for students of the specified class level.
-      Ensure all references are relevant to the subject and syllabus.
-    `;
-
+  const prompt = buildExplanationPrompt({
+    questionData,
+    specificQuestion
+});
     // add this on both condition 
     //   4. Learning resources including:
     //  - Educational videos (YouTube links or video titles)
@@ -228,16 +126,10 @@ const generateQuestionExplanation = async (questionData) => {
         setTimeout(() => reject(new Error("Request timeout")), ms)
       );
 
-      const result = await Promise.race([
-        model.generateContent(prompt),
-        timeoutPromise(45000) // 45s timeout for longer explanation
-      ]);
-
-      const response = await result.response;
-      
-      const text = response.text();
-
-      const parsedResponse = JSON.parse(text);
+      const parsedResponse = await Promise.race([
+    ai.generateJson(prompt),
+    timeoutPromise(45000)
+]);
       
       // Validate the response structure
       if (!parsedResponse.explanation || !parsedResponse.references) {
@@ -274,47 +166,12 @@ const generateVerificationQuestions = async ({
     let retryCount = 0;
     let lastError = null;
 
-   const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
-    generationConfig: {
-        responseMimeType: "application/json"
-    }
-    });
+   
 
-    const prompt = `
-You are an expert teacher.
-
-Below is the learning content.
-
-${explanation}
-
-Generate EXACTLY 3 NEW multiple choice questions that test whether the student has understood this topic.
-
-Rules:
-
-- Questions must NOT copy the original question.
-- Questions must test the same concept.
-- Difficulty should be similar.
-- Return ONLY JSON.
-
-Format:
-
-[
-{
-"questionNumber":1,
-"question":"...",
-"choices":{
-"A":"...",
-"B":"...",
-"C":"...",
-"D":"..."
-},
-"correctAnswer":"A"
-}
-]
-
-Language: ${language}
-`;
+    const prompt = buildVerificationPrompt({
+    explanation,
+    language
+});
 
     while(retryCount < MAX_RETRIES){
 
@@ -324,14 +181,10 @@ Language: ${language}
                 setTimeout(()=>reject(new Error("Timeout")),ms)
             );
 
-            const result=await Promise.race([
-                model.generateContent(prompt),
-                timeoutPromise(30000)
-            ]);
-
-            const response=await result.response;
-
-            return JSON.parse(response.text());
+            return await Promise.race([
+    ai.generateJson(prompt),
+    timeoutPromise(30000)
+]);
 
         }
         catch(error){
