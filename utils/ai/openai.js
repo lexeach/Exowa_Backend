@@ -1,13 +1,9 @@
-console.log("******** OPENAI.JS LOADED ********");
-
 const OpenAI = require("openai");
 
 let client = null;
 
 function getClient() {
-
     if (!client) {
-
         if (!process.env.OPENAI_API_KEY) {
             throw new Error("OPENAI_API_KEY is missing.");
         }
@@ -20,14 +16,13 @@ function getClient() {
     return client;
 }
 
-const MODEL = "gpt-4o-mini";
+const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
 async function generateJson(prompt) {
 
     const client = getClient();
 
-   const response = await client.chat.completions.create({
-
+    const response = await client.chat.completions.create({
         model: MODEL,
 
         response_format: {
@@ -35,20 +30,16 @@ async function generateJson(prompt) {
         },
 
         messages: [
-
             {
                 role: "system",
                 content:
-                    "You are an expert educational AI. Always return ONLY valid JSON."
+                    "Return ONLY valid JSON. Never use markdown. Never explain."
             },
-
             {
                 role: "user",
                 content: prompt
             }
-
         ]
-
     });
 
     const content = response.choices?.[0]?.message?.content;
@@ -57,18 +48,24 @@ async function generateJson(prompt) {
         throw new Error("Empty response received from OpenAI.");
     }
 
+    let parsed;
+
     try {
-
-        return JSON.parse(content);
-
-    } catch (err) {
-
-        throw new Error(
-            "Invalid JSON returned from OpenAI.\n\n" + content
-        );
-
+        parsed = JSON.parse(content);
+    } catch (e) {
+        throw new Error("Invalid JSON returned by OpenAI:\n\n" + content);
     }
 
+    // Normalize question array
+    if (Array.isArray(parsed)) {
+        return parsed;
+    }
+
+    if (Array.isArray(parsed.questions)) {
+        return parsed.questions;
+    }
+
+    return parsed;
 }
 
 module.exports = {
