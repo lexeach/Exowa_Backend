@@ -64,18 +64,26 @@ const generateExplanationsSequentially = async (
       isDeleted: false,
     });
 
-    for (const questionNumber of uniqueNumbers) {
-      const existingExplanation =
-        explanationDoc?.explanations?.find(
-          (exp) => exp.questionNumber === questionNumber
-        );
+    for (const questionNumber of uniqueQuestionNumbers) {
 
-      if (existingExplanation) {
-        console.log(
-          `Explanation already exists for question ${questionNumber}. Skipping.`
-        );
+    try {
+
+        console.log(`Generating explanation for question ${questionNumber}`);
+
+        const aiResponse =
+            await generateQuestionExplanationAI(payload);
+
+        // save explanation
+
+    } catch (err) {
+
+        console.error(err);
+
         continue;
-      }
+
+    }
+
+}
 
       const questionDataPayload = {
         subject: paper.subject,
