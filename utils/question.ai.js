@@ -217,43 +217,7 @@ Return JSON only.
       const text = response.text();
 
       const parsedResponse = JSON.parse(text);
-      const explanations = parsedResponse.questions || [
-    {
-        questionNumber: wrongQuestions[0]?.questionNumber,
-        explanation: parsedResponse.explanation,
-        summary: parsedResponse.summary || "",
-        learningObjective: parsedResponse.learningObjective || "",
-        keyConcepts: parsedResponse.keyConcepts || [],
-        verificationQuestions: parsedResponse.verificationQuestions || [],
-        references: parsedResponse.references || {
-            videos: [],
-            articles: [],
-            books: [],
-        },
-    },
-];
-      for (const item of explanations) {
-    if (
-    typeof item.questionNumber !== "number" ||
-    typeof item.explanation !== "string" ||
-    typeof item.summary !== "string" ||
-    typeof item.learningObjective !== "string" ||
-    !Array.isArray(item.keyConcepts) ||
-    !Array.isArray(item.verificationQuestions) ||
-    !item.references ||
-    !Array.isArray(item.references.videos) ||
-    !Array.isArray(item.references.articles) ||
-    !Array.isArray(item.references.books)
-) {
-    throw new Error("Invalid AI response structure");
-}
-}
-
-if (!Array.isArray(explanations) || explanations.length === 0) {
-    throw new Error("No explanation returned from AI");
-}
-
-return explanations[0];
+     
      
     } catch (error) {
       retryCount++;
