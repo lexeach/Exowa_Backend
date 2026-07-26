@@ -57,36 +57,69 @@ const generateExplanationsSequentially = async (paperData, questionNumbers = [])
         continue;
       }
 
-      const questionDataPayload = {
-        subject: paper.subject,
-        syllabus: paper.syllabus,
+      const originalQuestion = paper.questions.find(
+    q => Number(q.questionNumber) === Number(questionNumber)
+);
+
+if (!originalQuestion) {
+    console.error(
+        `Question ${questionNumber} not found in paper ${paperId}`
+    );
+    continue;
+}
+
+try {
+
+    aiResponse = await generateQuestionExplanationAI({
+
         className: paper.className || paper.class,
+
+        subject: paper.subject,
+
+        syllabus: paper.syllabus,
+
         chapter_from: paper.chapter_from,
-        //chapter_to: paper.chapter_to,
+
         language: paper.language,
-        no_of_question: paper.no_of_question,
-        questions: paper.questions,
-        questionNumber,
-      };
 
-      let aiResponse;
+        question: originalQuestion.question,
 
-      try {
-        aiResponse = await generateQuestionExplanationAI(questionDataPayload);
-      } catch (error) {
-        console.error(
-          `Failed to generate explanation for question ${questionNumber} of paper ${paperId}:`,
-          error
-        );
-        continue;
-      }
+        choices: originalQuestion.choices,
+
+        correctAnswer: originalQuestion.correctAnswer
+
+    });
+
+}
+catch (error) {
+
+    console.error(
+
+        `Failed to generate explanation for question ${questionNumber} of paper ${paperId}:`,
+
+        error
+
+    );
+
+    continue;
+
+}
 
       const newExplanation = {
-        questionNumber,
-        explanation: aiResponse.explanation,
-        references: aiResponse.references,
-        generatedAt: new Date(),
-      };
+
+    questionNumber,
+
+    explanation: aiResponse.explanation,
+
+    importantPoints:
+        aiResponse.importantPoints || [],
+
+    commonMistakes:
+        aiResponse.commonMistakes || [],
+
+    generatedAt: new Date()
+
+};
 
       if (explanationDoc) {
         explanationDoc.explanations.push(newExplanation);

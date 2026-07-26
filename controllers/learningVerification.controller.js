@@ -1,5 +1,5 @@
 const Paper = require("../models/paper.model");
-const QuestionExplanation = require("../models/questionExplanation.model");
+
 const LearningVerification = require("../models/learningVerification.model");
 
 const {
@@ -99,13 +99,28 @@ exports.generateVerification = async (req, res) => {
         //--------------------------------------------------
 
         const aiQuestions =
-            await generateVerificationQuestions({
+    await generateVerificationQuestions({
 
-                explanation: explanation.explanation,
+        className: paper.className,
 
-                language: paper.language,
+        subject: paper.subject,
 
-            });
+        syllabus: paper.syllabus,
+
+        chapter_from: paper.chapter_from,
+
+        language: paper.language,
+
+        question: originalQuestion.question,
+
+        choices: originalQuestion.choices,
+
+        correctAnswer: originalQuestion.correctAnswer,
+
+        learningObjective:
+            originalQuestion.learningObjective || ""
+
+    });
 
         const questions =
             aiQuestions.map((question) => ({
@@ -155,7 +170,8 @@ exports.generateVerification = async (req, res) => {
 
     // Only regenerate if still pending
     verification.questions = questions;
-    verification.learningContent = explanation.explanation;
+    verification.learningObjective =
+    originalQuestion.learningObjective || "";
     verification.score = 0;
     verification.scorePercentage = 0;
     verification.submittedAt = null;
@@ -189,8 +205,8 @@ exports.generateVerification = async (req, res) => {
 
                         ),
 
-                    learningContent:
-                        explanation.explanation,
+                    learningObjective:
+    originalQuestion.learningObjective || "",
 
                     questions,
 

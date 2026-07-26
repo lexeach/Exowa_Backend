@@ -20,10 +20,14 @@ const questionExplanationSchema = new mongoose.Schema(
           type: String,
           required: true
         },
-        references: {
-          videos: [{ type: String }],
-          articles: [{ type: String }],
-          books: [{ type: String }]
+        importantPoints: {
+        type: [String],
+        default: []
+        },
+
+        commonMistakes: {
+        type: [String],
+       default: []
         },
         generatedAt: {
           type: Date,
