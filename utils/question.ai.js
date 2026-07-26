@@ -139,67 +139,58 @@ const generateQuestionExplanation = async (questionData) => {
   );
 
 
-  const prompt = `
-You are an experienced ${questionData.syllabus} teacher.
+ const prompt = `
+You are an expert ${subject} teacher.
 
-Subject: ${questionData.subject}
-Class: ${questionData.className}
-Chapter: ${questionData.chapter_from}
-Language: ${questionData.language}
-
-The following questions were answered incorrectly by the student.
-
-Generate one explanation object for EACH question.
-
-The output array length MUST exactly match the input array length.
-
-Do not skip any question.
-
-Use the same questionNumber for every returned object.
-
-${JSON.stringify(wrongQuestions)}
-
-For EACH question generate:
-
-1. explanation
-2. summary
-3. learningObjective
-4. keyConcepts (5-10)
-5. exactly 10 verification questions
-6. learning references
+Generate an explanation ONLY for the following question.
 
 Return ONLY valid JSON.
 
 {
-  "questions":[
+  "questionNumber": ${question.questionNumber},
+  "explanation": "Detailed explanation",
+  "summary": "Short summary",
+  "learningObjective": "Student should learn...",
+  "keyConcepts": [
+    "Concept 1",
+    "Concept 2"
+  ],
+  "verificationQuestions": [
     {
-      "questionNumber":1,
-      "explanation":"",
-      "summary":"",
-      "learningObjective":"",
-      "keyConcepts":[
-        ""
+      "question": "",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
       ],
-      "verificationQuestions":[
-        {
-          "question":"",
-          "choices":{
-            "A":"",
-            "B":"",
-            "C":"",
-            "D":""
-          },
-          "correctAnswer":"A"
-        }
+      "correctAnswer": "A"
+    },
+    {
+      "question": "",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
       ],
-      "references":{
-        "videos":[],
-        "articles":[],
-        "books":[]
-      }
+      "correctAnswer": "B"
     }
-  ]
+  ],
+  "references": {
+    "book": "",
+    "chapter": "",
+    "topic": ""
+  }
 }
+
+Question:
+
+${JSON.stringify(question, null, 2)}
+
+Do not wrap in markdown.
+Do not add extra text.
+Return JSON only.
 `;
     // add this on both condition 
     //   4. Learning resources including:
