@@ -1,6 +1,4 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY);
-
+const ai = require("./ai/provider");
 const getGenerateQuestion = async ({
   className,
   subject,
@@ -20,13 +18,7 @@ const getGenerateQuestion = async ({
   let retryCount = 0;
   let lastError = null;
 
-  const model = genAI.getGenerativeModel({ 
-    model: "gemini-3.5-flash",
-    generationConfig: {
-      responseMimeType: "application/json"
-    }
-  });
-
+  
   const numberOfQuestions = Number(no_of_question) || Number(process.env.NO_OF_QUESTIONS) || 10;
   
   const prompt = `
@@ -60,16 +52,14 @@ const getGenerateQuestion = async ({
         setTimeout(() => reject(new Error("Request timeout")), ms)
       );
 
-      const result = await Promise.race([
-        model.generateContent(prompt),
-        timeoutPromise(30000) // 30s timeout
-      ]);
-
-      const response = await result.response;
-      const text = response.text();
-
-      const parsedQuestions = JSON.parse(text);
-      
+      const parsedQuestions = await ai.generateQuestions({
+    className,
+    subject,
+    syllabus,
+    chapter_from,
+    language,
+    no_of_question
+});      
       const isValidQuestion = (question) => {
         return (
           typeof question.questionNumber === "number" &&
@@ -120,13 +110,7 @@ const generateQuestionExplanation = async (questionData) => {
   let retryCount = 0;
   let lastError = null;
 
-  const model = genAI.getGenerativeModel({ 
-    model: "gemini-3.5-flash",
-    generationConfig: {
-      responseMimeType: "application/json"
-    }
-  });
-
+ 
   // If questionNumber is provided, focus on that specific question
   const wrongQuestions =
   questionData.wrongQuestions ||
@@ -216,16 +200,10 @@ Return ONLY valid JSON.
         setTimeout(() => reject(new Error("Request timeout")), ms)
       );
 
-      const result = await Promise.race([
-        model.generateContent(prompt),
-        timeoutPromise(45000) // 45s timeout for longer explanation
-      ]);
-
-      const response = await result.response;
-      
-      const text = response.text();
-
-      const parsedResponse = JSON.parse(text);
+ const parsedResponse = await ai.generateExplanation({
+    ...questionData,
+    wrongQuestions
+});
       const explanations = parsedResponse.questions || [
     {
         questionNumber: wrongQuestions[0]?.questionNumber,
@@ -288,13 +266,7 @@ const generateVerificationQuestions = async ({
     let retryCount = 0;
     let lastError = null;
 
-   const model = genAI.getGenerativeModel({
-    model: "gemini-3.5-flash",
-    generationConfig: {
-        responseMimeType: "application/json"
-    }
-    });
-
+  
     const prompt = `
 You are an expert teacher.
 
@@ -338,14 +310,10 @@ Language: ${language}
                 setTimeout(()=>reject(new Error("Timeout")),ms)
             );
 
-            const result=await Promise.race([
-                model.generateContent(prompt),
-                timeoutPromise(30000)
-            ]);
-
-            const response=await result.response;
-
-            return JSON.parse(response.text());
+            return await ai.generateVerificationQuestions({
+    explanation,
+    language
+});
 
         }
         catch(error){
