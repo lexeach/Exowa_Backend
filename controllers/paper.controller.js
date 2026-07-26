@@ -93,22 +93,31 @@ const generateExplanationsSequentially = async (
           `Generating explanation for question ${questionNumber}...`
         );
 
-        const aiResponse =
-          await generateQuestionExplanationAI(questionDataPayload);
-		  console.log(
-  "AI Response:",
-  JSON.stringify(aiResponse, null, 2)
+       const aiResponse = await generateQuestionExplanationAI(questionDataPayload);
+
+console.log(
+    "AI Response:",
+    JSON.stringify(aiResponse, null, 2)
 );
 
-console.log("Explanation:", aiResponse?.explanation);
-console.log("References:", aiResponse?.references);
+const newExplanation = {
+    questionNumber,
 
-        const newExplanation = {
-          questionNumber,
-          explanation: aiResponse.explanation,
-          references: aiResponse.references,
-          generatedAt: new Date(),
-        };
+    explanation: aiResponse.explanation,
+
+    summary: aiResponse.summary,
+
+    learningObjective: aiResponse.learningObjective,
+
+    keyConcepts: aiResponse.keyConcepts || [],
+
+    verificationQuestions:
+        aiResponse.verificationQuestions || [],
+
+    references: aiResponse.references,
+
+    generatedAt: new Date()
+};
 
         if (explanationDoc) {
           explanationDoc.explanations.push(newExplanation);
