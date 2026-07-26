@@ -175,10 +175,14 @@ console.log(
         `Waiting ${AI_REQUEST_DELAY}ms before next AI request...`
       );
 
-      await new Promise((resolve) =>
-        setTimeout(resolve, AI_REQUEST_DELAY)
-      );
-    }
+     console.log("Waiting started at:", new Date().toISOString());
+console.log(`Waiting ${AI_REQUEST_DELAY / 1000} seconds before retry...`);
+
+await new Promise((resolve) =>
+    setTimeout(resolve, AI_REQUEST_DELAY)
+);
+
+console.log("Waiting finished at:", new Date().toISOString());    }
   } catch (error) {
     allGenerated = false;
 
