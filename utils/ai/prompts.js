@@ -56,7 +56,11 @@ const buildExplanationPrompt = ({
     if (specificQuestion) {
 
         return `
-Generate a comprehensive explanation and learning resources for this specific question.
+You are an expert education assistant.
+
+Your job is NOT to explain the answer.
+
+Your job is to identify the learning topic and generate search keywords that will help students learn the concept using YouTube videos and PDF notes.
 
 Subject: ${questionData.subject}
 Board: ${questionData.syllabus}
@@ -64,7 +68,8 @@ Class: ${questionData.className}
 Chapter: ${questionData.chapter_from}
 Language: ${questionData.language}
 
-Question Number: ${questionData.questionNumber}
+Question Number:
+${questionData.questionNumber}
 
 Question:
 ${specificQuestion.question}
@@ -78,35 +83,52 @@ ${specificQuestion.correctAnswer}
 Return ONLY valid JSON.
 
 {
-    "explanation":"Detailed explanation",
-    "references":{
-        "videos":[
-            "Video 1",
-            "Video 2"
-        ],
-        "articles":[
-            "Article 1",
-            "Article 2"
-        ],
-        "books":[
-            "Book 1",
-            "Book 2"
-        ]
-    }
+    "topic":"",
+
+    "learningObjective":"",
+
+    "youtubeSearch":[
+        "",
+        "",
+        ""
+    ],
+
+    "pdfSearch":[
+        "",
+        ""
+    ]
 }
 
 Rules
 
-- Explain why the correct answer is correct.
-- Explain why the other options are incorrect.
-- Keep language suitable for Class ${questionData.className}.
-- JSON only.
+1. Do NOT explain the answer.
+
+2. Do NOT generate YouTube links.
+
+3. Do NOT generate PDF links.
+
+4. Generate ONE clear topic.
+
+5. Generate ONE concise learning objective.
+
+6. Generate EXACTLY 3 YouTube search queries.
+
+7. Generate EXACTLY 2 PDF search queries.
+
+8. Queries should be suitable for Class ${questionData.className}.
+
+9. Queries must include class and syllabus when useful.
+
+10. Return ONLY JSON.
+
 `;
 
     }
 
     return `
-Generate a comprehensive explanation and learning resources for the following question paper.
+You are an expert education assistant.
+
+Generate learning resources for every question in this paper.
 
 Subject: ${questionData.subject}
 Board: ${questionData.syllabus}
@@ -121,29 +143,48 @@ ${JSON.stringify(questionData.questions, null, 2)}
 Return ONLY valid JSON.
 
 {
-    "explanation":"Detailed explanation",
-    "references":{
-        "videos":[
-            "Video 1",
-            "Video 2"
-        ],
-        "articles":[
-            "Article 1",
-            "Article 2"
-        ],
-        "books":[
-            "Book 1",
-            "Book 2"
-        ]
-    }
+    "questions":[
+        {
+            "questionNumber":1,
+
+            "topic":"",
+
+            "learningObjective":"",
+
+            "youtubeSearch":[
+                "",
+                "",
+                ""
+            ],
+
+            "pdfSearch":[
+                "",
+                ""
+            ]
+        }
+    ]
 }
 
 Rules
 
-- Explain all concepts.
-- Suitable for Class ${questionData.className}.
-- JSON only.
+1. Include EVERY question.
+
+2. Do NOT explain answers.
+
+3. Do NOT generate YouTube links.
+
+4. Do NOT generate PDF links.
+
+5. Return EXACTLY one object for each question.
+
+6. Generate exactly 3 YouTube search queries.
+
+7. Generate exactly 2 PDF search queries.
+
+8. Return ONLY valid JSON.
+
 `;
+
 };
 
 const buildVerificationPrompt = ({
