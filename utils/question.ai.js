@@ -95,67 +95,182 @@ const getGenerateQuestion = async ({
   }
 };
 
-const generateQuestionExplanation = async (questionData) => {
-  const MAX_RETRIES = 3;
-  let retryCount = 0;
-  let lastError = null;
+const generateLearningResources = async (questionData) => {
 
-  
+    const MAX_RETRIES = 3;
 
-  // If questionNumber is provided, focus on that specific question
-  const specificQuestion = questionData.questionNumber && questionData.questions 
-    ? questionData.questions.find(q => q.questionNumber === questionData.questionNumber)
-    : null;
+    let retryCount = 0;
 
-  const prompt = buildExplanationPrompt({
-    questionData,
-    specificQuestion
-});
-    // add this on both condition 
-    //   4. Learning resources including:
-    //  - Educational videos (YouTube links or video titles)
-    //  - Articles (online resources, study materials)
-    //  - Books (textbook recommendations, reference books)
+    let lastError = null;
 
-  while (retryCount < MAX_RETRIES) {
-    try {
-      console.log(`Attempt ${retryCount + 1}/${MAX_RETRIES} to generate explanation...`);
-      
-      // Add timeout to prevent hanging
-      const timeoutPromise = (ms) => new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Request timeout")), ms)
-      );
+    //--------------------------------------------------
+    // Find Specific Question
+    //--------------------------------------------------
 
-      const parsedResponse = await Promise.race([
-    ai.generateJson(prompt),
-    timeoutPromise(45000)
-]);
-      
-      // Validate the response structure
-      if (!parsedResponse.explanation || !parsedResponse.references) {
-        throw new Error("Invalid response structure");
-      }
+    const specificQuestion =
+        questionData.questionNumber && questionData.questions
 
-      if (!parsedResponse.references.videos || !parsedResponse.references.articles || !parsedResponse.references.books) {
-        throw new Error("Missing reference categories");
-      }
+            ? questionData.questions.find(
+                  q =>
+                      Number(q.questionNumber) ===
+                      Number(questionData.questionNumber)
+              )
 
-      return parsedResponse;
+            : null;
 
-    } catch (error) {
-      retryCount++;
-      lastError = error;
-      console.error(`Error on attempt ${retryCount}: ${error.message}`);
-      
-      if (retryCount >= MAX_RETRIES) {
-        throw new Error(`Failed after ${MAX_RETRIES} attempts: ${lastError.message}`);
-      }
+    if (
+        questionData.questionNumber &&
+        !specificQuestion
+    ) {
 
-      const delay = Math.pow(2, retryCount) * 1000;
-      console.log(`Waiting ${delay/1000}s before retry...`);
-      await new Promise(resolve => setTimeout(resolve, delay));
+        throw new Error(
+            "Question not found."
+        );
+
     }
-  }
+
+    //--------------------------------------------------
+    // Build Prompt
+    //--------------------------------------------------
+
+    const prompt = buildExplanationPrompt({
+
+        questionData,
+
+        specificQuestion
+
+    });
+
+    //--------------------------------------------------
+    // Retry
+    //--------------------------------------------------
+
+    while (retryCount < MAX_RETRIES) {
+
+        try {
+
+            console.log(
+
+                `Attempt ${retryCount + 1}/${MAX_RETRIES} to generate learning resources...`
+
+            );
+
+            const timeoutPromise = ms =>
+
+                new Promise((_, reject) =>
+
+                    setTimeout(
+
+                        () => reject(new Error("Request timeout")),
+
+                        ms
+
+                    )
+
+                );
+
+            const parsedResponse =
+                await Promise.race([
+
+                    ai.generateJson(prompt),
+
+                    timeoutPromise(30000)
+
+                ]);
+
+            //--------------------------------------------------
+            // Validation
+            //--------------------------------------------------
+
+            if (specificQuestion) {
+
+                if (
+
+                    !parsedResponse.topic ||
+
+                    !parsedResponse.learningObjective ||
+
+                    !Array.isArray(parsedResponse.youtubeSearch) ||
+
+                    !Array.isArray(parsedResponse.pdfSearch)
+
+                ) {
+
+                    throw new Error(
+
+                        "Invalid learning resource response."
+
+                    );
+
+                }
+
+                return parsedResponse;
+
+            }
+
+            //--------------------------------------------------
+            // Whole Paper
+            //--------------------------------------------------
+
+            if (
+
+                !Array.isArray(parsedResponse.questions)
+
+            ) {
+
+                throw new Error(
+
+                    "Invalid learning resource response."
+
+                );
+
+            }
+
+            return parsedResponse;
+
+        }
+
+        catch (error) {
+
+            retryCount++;
+
+            lastError = error;
+
+            console.error(
+
+                `Error on attempt ${retryCount}: ${error.message}`
+
+            );
+
+            if (retryCount >= MAX_RETRIES) {
+
+                throw new Error(
+
+                    `Failed after ${MAX_RETRIES} attempts: ${lastError.message}`
+
+                );
+
+            }
+
+            const delay =
+                Math.pow(2, retryCount) * 1000;
+
+            console.log(
+
+                `Waiting ${delay / 1000}s before retry...`
+
+            );
+
+            await new Promise(resolve =>
+
+                setTimeout(resolve, delay)
+
+            );
+
+        }
+
+    }
+
 };
 const generateVerificationQuestions = async ({
     explanation,
