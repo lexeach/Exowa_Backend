@@ -1,14 +1,7 @@
 // =====================================================
-// Exowa AI Prompt Templates
+// AI Prompt Templates
 // Shared by Gemini & OpenAI
-// Optimized for Token Usage
 // =====================================================
-
-/**
- * =====================================================
- * QUESTION GENERATION
- * =====================================================
- */
 
 const buildQuestionPrompt = ({
     className,
@@ -20,210 +13,175 @@ const buildQuestionPrompt = ({
 }) => {
 
     return `
-You are an experienced ${subject} teacher.
+Generate exactly ${numberOfQuestions} multiple-choice questions for a ${subject} exam
+for class ${className} based on the ${syllabus} syllabus from chapter ${chapter_from}.
 
-Generate EXACTLY ${numberOfQuestions} multiple-choice questions.
+Use ${language} language.
 
-Details
+Return ONLY a valid JSON array.
 
-Class: ${className}
-Subject: ${subject}
-Board: ${syllabus}
-Chapter: ${chapter_from}
-Language: ${language}
+[
+  {
+    "questionNumber": 1,
+    "question": "Question text here",
+    "choices": {
+      "A": "Option A text",
+      "B": "Option B text",
+      "C": "Option C text",
+      "D": "Option D text",
+      "E": "I don't know (translated into ${language})"
+    },
+    "correctAnswer": "A"
+  }
+]
+
+Rules
+
+1. Generate exactly ${numberOfQuestions} questions.
+2. Every question must have A, B, C, D and E.
+3. Option E must be "I don't know" translated into ${language}.
+4. Correct answer must be A/B/C/D/E.
+5. No markdown.
+6. No explanation.
+7. No extra text.
+8. Return only valid JSON.
+`;
+};
+
+const buildExplanationPrompt = ({
+    questionData,
+    specificQuestion
+}) => {
+
+    if (specificQuestion) {
+
+        return `
+Generate a comprehensive explanation and learning resources for this specific question.
+
+Subject: ${questionData.subject}
+Board: ${questionData.syllabus}
+Class: ${questionData.className}
+Chapter: ${questionData.chapter_from}
+Language: ${questionData.language}
+
+Question Number: ${questionData.questionNumber}
+
+Question:
+${specificQuestion.question}
+
+Choices:
+${JSON.stringify(specificQuestion.choices, null, 2)}
+
+Correct Answer:
+${specificQuestion.correctAnswer}
 
 Return ONLY valid JSON.
 
 {
-  "questions":[
-    {
-      "questionNumber":1,
-      "question":"",
-
-      "choices":{
-        "A":"",
-        "B":"",
-        "C":"",
-        "D":"",
-        "E":""
-      },
-
-      "correctAnswer":"A",
-
-      "learningObjective":""
+    "explanation":"Detailed explanation",
+    "references":{
+        "videos":[
+            "Video 1",
+            "Video 2"
+        ],
+        "articles":[
+            "Article 1",
+            "Article 2"
+        ],
+        "books":[
+            "Book 1",
+            "Book 2"
+        ]
     }
-  ]
 }
 
 Rules
 
-1. Generate EXACTLY ${numberOfQuestions} questions.
-2. Question language must be ${language}.
-3. Every question must contain options A,B,C,D,E.
-4. Option E must always be "I don't know" translated into ${language}.
-5. Correct answer must be A/B/C/D only.
-6. learningObjective must be ONE SHORT sentence (maximum 15 words).
-7. Do not repeat questions.
-8. Do not include explanations.
-9. Do not include markdown.
-10. Return JSON only.
+- Explain why the correct answer is correct.
+- Explain why the other options are incorrect.
+- Keep language suitable for Class ${questionData.className}.
+- JSON only.
+`;
+
+    }
+
+    return `
+Generate a comprehensive explanation and learning resources for the following question paper.
+
+Subject: ${questionData.subject}
+Board: ${questionData.syllabus}
+Class: ${questionData.className}
+Chapter: ${questionData.chapter_from}
+Language: ${questionData.language}
+
+Questions:
+
+${JSON.stringify(questionData.questions, null, 2)}
+
+Return ONLY valid JSON.
+
+{
+    "explanation":"Detailed explanation",
+    "references":{
+        "videos":[
+            "Video 1",
+            "Video 2"
+        ],
+        "articles":[
+            "Article 1",
+            "Article 2"
+        ],
+        "books":[
+            "Book 1",
+            "Book 2"
+        ]
+    }
+}
+
+Rules
+
+- Explain all concepts.
+- Suitable for Class ${questionData.className}.
+- JSON only.
 `;
 };
 
-
-
-/**
- * =====================================================
- * QUESTION EXPLANATION
- * =====================================================
- */
-
-const buildExplanationPrompt = ({
-    className,
-    subject,
-    syllabus,
-    chapter_from,
-    language,
-    question,
-    choices,
-    correctAnswer
+const buildVerificationPrompt = ({
+    explanation,
+    language
 }) => {
 
     return `
 You are an expert teacher.
 
-Explain this question for a Class ${className} student.
+Below is the learning explanation.
 
-Class: ${className}
-Subject: ${subject}
-Board: ${syllabus}
-Chapter: ${chapter_from}
-
-Language: ${language}
-
-Question
-
-${question}
-
-Choices
-
-${JSON.stringify(choices, null, 2)}
-
-Correct Answer
-
-${correctAnswer}
-
-Return ONLY JSON.
-
-{
-    "explanation":"",
-    "importantPoints":[
-        "",
-        "",
-        ""
-    ],
-
-    "commonMistakes":[
-        "",
-        ""
-    ]
-}
-
-Rules
-
-1. Explain why the correct answer is correct.
-2. Briefly explain why other options are incorrect.
-3. Use simple ${language}.
-4. Do NOT recommend videos.
-5. Do NOT recommend books.
-6. Do NOT recommend websites.
-7. No markdown.
-8. Return JSON only.
-`;
-};
-
-
-
-/**
- * =====================================================
- * PRACTICE MORE
- * =====================================================
- */
-
-const buildVerificationPrompt = ({
-    className,
-    subject,
-    syllabus,
-    chapter_from,
-    language,
-    question,
-    choices,
-    correctAnswer,
-    learningObjective = ""
-}) => {
-
-    return `
-You are an experienced teacher.
+${explanation}
 
 Generate EXACTLY 3 NEW multiple-choice questions.
 
-Class: ${className}
-Subject: ${subject}
-Board: ${syllabus}
-Chapter: ${chapter_from}
-
-Language: ${language}
-
-Original Question
-
-${question}
-
-Choices
-
-${JSON.stringify(choices, null, 2)}
-
-Correct Answer
-
-${correctAnswer}
-
-Learning Objective
-
-${learningObjective}
-
-Return ONLY JSON.
-
-{
-  "questions":[
-    {
-      "questionNumber":1,
-
-      "question":"",
-
-      "choices":{
-        "A":"",
-        "B":"",
-        "C":"",
-        "D":"",
-        "E":""
-      },
-
-      "correctAnswer":"A"
-    }
-  ]
-}
-
 Rules
 
-1. Generate EXACTLY 3 NEW questions.
-2. Do NOT copy the original question.
-3. Test the same learning objective.
-4. Keep the same difficulty level.
-5. Use ${language}.
-6. Option E must be "I don't know" translated into ${language}.
-7. Correct answer must be A/B/C/D only.
-8. No explanation.
-9. No markdown.
-10. Return JSON only.
+- Questions must NOT copy the original question.
+- Questions must test the same concept.
+- Difficulty should be similar.
+- Return ONLY JSON.
+
+[
+    {
+        "questionNumber":1,
+        "question":"Question text",
+        "choices":{
+            "A":"Option A",
+            "B":"Option B",
+            "C":"Option C",
+            "D":"Option D"
+        },
+        "correctAnswer":"A"
+    }
+]
+
+Language: ${language}
 `;
 };
 

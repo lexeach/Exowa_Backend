@@ -78,10 +78,10 @@ const learningVerificationSchema = new mongoose.Schema(
       required: true,
     },
 
-    // Optional metadata for future practice generation
-    learningObjective: {
-    type: String,
-    default: ""
+    // AI Generated Learning Content
+    learningContent: {
+      type: String,
+      required: true,
     },
 
     // Generated Verification Questions

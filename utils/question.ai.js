@@ -6,507 +6,205 @@ const {
     buildVerificationPrompt
 } = require("./ai/prompts");
 
-/**
- * ===========================================================
- * Exowa AI Engine V2
- * Shared Helpers
- * ===========================================================
- */
-
-const MAX_RETRIES = 3;
-const REQUEST_TIMEOUT = 30000;
-
-const sleep = (ms) =>
-    new Promise(resolve => setTimeout(resolve, ms));
-
-const timeoutPromise = (ms) =>
-    new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Request timeout")), ms)
-    );
-
-/**
- * Normalize OpenAI/Gemini response.
- *
- * Supports:
- *
- * [
- *   {...}
- * ]
- *
- * or
- *
- * {
- *    questions:[...]
- * }
- */
-
-const normalizeQuestions = (response) => {
-
-    if (Array.isArray(response)) {
-        return response;
-    }
-
-    if (
-        response &&
-        typeof response === "object" &&
-        Array.isArray(response.questions)
-    ) {
-        return response.questions;
-    }
-
-    throw new Error("Invalid AI response format.");
-};
-
-/**
- * Validate generated question.
- */
-
-const isValidQuestion = (question) => {
-
-    if (!question) return false;
-
-    return (
-
-        typeof question.questionNumber === "number"
-
-        && typeof question.question === "string"
-
-        && question.question.trim().length > 0
-
-        && typeof question.choices === "object"
-
-        && ["A", "B", "C", "D", "E"].every(option =>
-
-            typeof question.choices[option] === "string"
-
-            && question.choices[option].trim().length > 0
-
-        )
-
-        && ["A", "B", "C", "D"].includes(question.correctAnswer)
-
-    );
-
-};
-
-/**
- * ===========================================================
- * Generate Question Paper
- * ===========================================================
- */
-
 const getGenerateQuestion = async ({
-
-    className,
-
-    subject,
-
-    syllabus,
-
-    chapter_from,
-
-    language,
-
-    no_of_question
-
+  className,
+  subject,
+  syllabus,
+  chapter_from,
+  //chapter_to,
+  language,
+  no_of_question,
 }) => {
+  // Input validation
+ 
+  if (!className || !subject || !syllabus || !chapter_from || !language) {
+  throw new Error("Missing required parameters");
+}
 
-    if (
-        !className ||
-        !subject ||
-        !syllabus ||
-        !chapter_from ||
-        !language
-    ) {
+  const MAX_RETRIES = 3;
+  let retryCount = 0;
+  let lastError = null;
 
-        throw new Error("Missing required parameters.");
+  
+  const numberOfQuestions = Number(no_of_question) || Number(process.env.NO_OF_QUESTIONS) || 10;
+  
+  const prompt = buildQuestionPrompt({
+    className,
+    subject,
+    syllabus,
+    chapter_from,
+    language,
+    numberOfQuestions
+});
+  while (retryCount < MAX_RETRIES) {
+    try {
+      console.log(`Attempt ${retryCount + 1}/${MAX_RETRIES} to generate questions...`);
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = (ms) => new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Request timeout")), ms)
+      );
 
+     const parsedQuestions = await Promise.race([
+    ai.generateJson(prompt),
+    timeoutPromise(30000)
+]);
+      
+      const isValidQuestion = (question) => {
+        return (
+          typeof question.questionNumber === "number" &&
+          typeof question.question === "string" &&
+          question.question.trim().length > 0 &&
+          typeof question.choices === "object" &&
+          ["A", "B", "C", "D", "E"].every(key => 
+            key in question.choices && 
+            typeof question.choices[key] === "string" &&
+            question.choices[key].trim().length > 0
+          ) &&
+          ["A", "B", "C", "D", "E"].includes(question.correctAnswer)
+        );
+      };
+
+      const validatedQuestions = parsedQuestions.filter(isValidQuestion);
+      
+      if (validatedQuestions.length === 0) {
+        throw new Error("No valid questions generated");
+      }
+
+      // Fallback mechanism for fewer questions
+      if (validatedQuestions.length < numberOfQuestions) {
+        console.warn(`Only ${validatedQuestions.length} valid questions generated out of ${numberOfQuestions} requested`);
+        return validatedQuestions; // Return what we have
+      }
+
+      return validatedQuestions;
+
+    } catch (error) {
+      retryCount++;
+      lastError = error;
+      console.error(`Error on attempt ${retryCount}: ${error.message}`);
+      
+      if (retryCount >= MAX_RETRIES) {
+        throw new Error(`Failed after ${MAX_RETRIES} attempts: ${lastError.message}`);
+      }
+
+      const delay = Math.pow(2, retryCount) * 1000;
+      console.log(`Waiting ${delay/1000}s before retry...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
-
-    const numberOfQuestions =
-        Number(no_of_question)
-        || Number(process.env.NO_OF_QUESTIONS)
-        || 10;
-
-    const prompt = buildQuestionPrompt({
-
-        className,
-
-        subject,
-
-        syllabus,
-
-        chapter_from,
-
-        language,
-
-        numberOfQuestions
-
-    });
-
-    let retry = 0;
-
-    let lastError = null;
-
-    while (retry < MAX_RETRIES) {
-
-        try {
-
-            console.log(
-                `Generate Paper Attempt ${retry + 1}/${MAX_RETRIES}`
-            );
-
-            const aiResponse = await Promise.race([
-
-                ai.generateJson(prompt),
-
-                timeoutPromise(REQUEST_TIMEOUT)
-
-            ]);
-
-            const parsedQuestions =
-                normalizeQuestions(aiResponse);
-
-            const validatedQuestions =
-                parsedQuestions.filter(isValidQuestion);
-
-            if (validatedQuestions.length === 0) {
-
-                throw new Error(
-                    "AI returned no valid questions."
-                );
-
-            }
-
-            /**
-             * Fill missing learningObjective
-             */
-
-            validatedQuestions.forEach((question) => {
-
-                if (!question.learningObjective) {
-
-                    question.learningObjective = "";
-
-                }
-
-            });
-
-            console.log(
-                `${validatedQuestions.length} questions generated successfully.`
-            );
-
-            return validatedQuestions;
-
-        }
-
-        catch (error) {
-
-            retry++;
-
-            lastError = error;
-
-            console.error(
-                `Generate Paper Error (${retry}/${MAX_RETRIES})`,
-                error.message
-            );
-
-            if (retry >= MAX_RETRIES) {
-
-                throw new Error(
-                    `Failed after ${MAX_RETRIES} attempts.\n${lastError.message}`
-                );
-
-            }
-
-            await sleep(
-                Math.pow(2, retry) * 1000
-            );
-
-        }
-
-    };
-
+  }
 };
 
-/**
- * ===========================================================
- * Explanation Engine
- * ===========================================================
- *
- * >>> Continue from here in Part-2 <<<
- */
+const generateQuestionExplanation = async (questionData) => {
+  const MAX_RETRIES = 3;
+  let retryCount = 0;
+  let lastError = null;
 
-const generateQuestionExplanation = async ({
+  
 
-    className,
+  // If questionNumber is provided, focus on that specific question
+  const specificQuestion = questionData.questionNumber && questionData.questions 
+    ? questionData.questions.find(q => q.questionNumber === questionData.questionNumber)
+    : null;
 
-    subject,
+  const prompt = buildExplanationPrompt({
+    questionData,
+    specificQuestion
+});
+    // add this on both condition 
+    //   4. Learning resources including:
+    //  - Educational videos (YouTube links or video titles)
+    //  - Articles (online resources, study materials)
+    //  - Books (textbook recommendations, reference books)
 
-    syllabus,
+  while (retryCount < MAX_RETRIES) {
+    try {
+      console.log(`Attempt ${retryCount + 1}/${MAX_RETRIES} to generate explanation...`);
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = (ms) => new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Request timeout")), ms)
+      );
 
-    chapter_from,
+      const parsedResponse = await Promise.race([
+    ai.generateJson(prompt),
+    timeoutPromise(45000)
+]);
+      
+      // Validate the response structure
+      if (!parsedResponse.explanation || !parsedResponse.references) {
+        throw new Error("Invalid response structure");
+      }
 
-    language,
+      if (!parsedResponse.references.videos || !parsedResponse.references.articles || !parsedResponse.references.books) {
+        throw new Error("Missing reference categories");
+      }
 
-    question,
+      return parsedResponse;
 
-    choices,
+    } catch (error) {
+      retryCount++;
+      lastError = error;
+      console.error(`Error on attempt ${retryCount}: ${error.message}`);
+      
+      if (retryCount >= MAX_RETRIES) {
+        throw new Error(`Failed after ${MAX_RETRIES} attempts: ${lastError.message}`);
+      }
 
-    correctAnswer
-
-}) => {
-
-    const prompt = buildExplanationPrompt({
-
-        className,
-
-        subject,
-
-        syllabus,
-
-        chapter_from,
-
-        language,
-
-        question,
-
-        choices,
-
-        correctAnswer
-
-    });
-
-    let retry = 0;
-
-    let lastError = null;
-
-    while (retry < MAX_RETRIES) {
-
-        try {
-
-            console.log(
-                `Generate Explanation Attempt ${retry + 1}/${MAX_RETRIES}`
-            );
-
-            const response = await Promise.race([
-
-                ai.generateJson(prompt),
-
-                timeoutPromise(45000)
-
-            ]);
-
-            if (
-
-                !response ||
-
-                typeof response !== "object"
-
-            ) {
-
-                throw new Error(
-                    "Invalid explanation response."
-                );
-
-            }
-
-            if (!response.explanation) {
-
-                throw new Error(
-                    "Explanation missing."
-                );
-
-            }
-
-            response.importantPoints =
-                Array.isArray(response.importantPoints)
-                    ? response.importantPoints
-                    : [];
-
-            response.commonMistakes =
-                Array.isArray(response.commonMistakes)
-                    ? response.commonMistakes
-                    : [];
-
-            return response;
-
-        }
-
-        catch (error) {
-
-            retry++;
-
-            lastError = error;
-
-            console.error(
-
-                `Generate Explanation Error (${retry}/${MAX_RETRIES})`,
-
-                error.message
-
-            );
-
-            if (retry >= MAX_RETRIES) {
-
-                throw new Error(
-
-                    `Failed after ${MAX_RETRIES} attempts.\n${lastError.message}`
-
-                );
-
-            }
-
-            await sleep(
-
-                Math.pow(2, retry) * 1000
-
-            );
-
-        }
-
+      const delay = Math.pow(2, retryCount) * 1000;
+      console.log(`Waiting ${delay/1000}s before retry...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
-
+  }
 };
-
-
-
-/**
- * ===========================================================
- * Practice More
- *
- * NO Explanation Required
- * ===========================================================
- */
-
 const generateVerificationQuestions = async ({
-
-    className,
-
-    subject,
-
-    syllabus,
-
-    chapter_from,
-
-    language,
-
-    question,
-
-    choices,
-
-    correctAnswer,
-
-    learningObjective = ""
-
+    explanation,
+    language
 }) => {
+
+    const MAX_RETRIES = 3;
+    let retryCount = 0;
+    let lastError = null;
+
+   
 
     const prompt = buildVerificationPrompt({
+    explanation,
+    language
+});
 
-        className,
+    while(retryCount < MAX_RETRIES){
 
-        subject,
+        try{
 
-        syllabus,
-
-        chapter_from,
-
-        language,
-
-        question,
-
-        choices,
-
-        correctAnswer,
-
-        learningObjective
-
-    });
-
-    let retry = 0;
-
-    let lastError = null;
-
-    while (retry < MAX_RETRIES) {
-
-        try {
-
-            console.log(
-
-                `Generate Practice Questions Attempt ${retry + 1}/${MAX_RETRIES}`
-
+            const timeoutPromise=(ms)=>new Promise((_,reject)=>
+                setTimeout(()=>reject(new Error("Timeout")),ms)
             );
 
-            const aiResponse = await Promise.race([
-
-                ai.generateJson(prompt),
-
-                timeoutPromise(REQUEST_TIMEOUT)
-
-            ]);
-
-            const questions =
-                normalizeQuestions(aiResponse);
-
-            const validatedQuestions =
-                questions.filter(isValidQuestion);
-
-            if (!validatedQuestions.length) {
-
-                throw new Error(
-                    "No valid practice questions generated."
-                );
-
-            }
-
-            return validatedQuestions;
+            return await Promise.race([
+    ai.generateJson(prompt),
+    timeoutPromise(30000)
+]);
 
         }
+        catch(error){
 
-        catch (error) {
+            retryCount++;
+            lastError=error;
 
-            retry++;
-
-            lastError = error;
-
-            console.error(
-
-                `Practice Question Error (${retry}/${MAX_RETRIES})`,
-
-                error.message
-
-            );
-
-            if (retry >= MAX_RETRIES) {
-
-                throw new Error(
-
-                    `Failed after ${MAX_RETRIES} attempts.\n${lastError.message}`
-
-                );
-
+            if(retryCount>=MAX_RETRIES){
+                throw lastError;
             }
 
-            await sleep(
-
-                Math.pow(2, retry) * 1000
-
-            );
+            await new Promise(r=>setTimeout(r,2000*retryCount));
 
         }
 
     }
 
-};
-
-
-
+}
 module.exports = {
-
     getGenerateQuestion,
-
     generateQuestionExplanation,
-
-    generateVerificationQuestions
-
+    generateVerificationQuestions,
 };
