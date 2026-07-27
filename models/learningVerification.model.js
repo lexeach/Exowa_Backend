@@ -81,8 +81,82 @@ const learningVerificationSchema = new mongoose.Schema(
     // AI Generated Learning Content
     learningContent: {
       type: String,
-      required: true,
+      default: [],
     },
+    //====================================================
+// AI Learning Metadata
+//====================================================
+
+topic: {
+    type: String,
+    default: "",
+},
+
+learningObjective: {
+    type: String,
+    default: "",
+},
+
+keywords: {
+    type: [String],
+    default: [],
+},
+
+//====================================================
+// Learning Videos
+//====================================================
+
+videos: [
+    {
+        youtubeId: {
+            type: String,
+            default: "",
+        },
+
+        title: {
+            type: String,
+            default: "",
+        },
+
+        channel: {
+            type: String,
+            default: "",
+        },
+
+        duration: {
+            type: String,
+            default: "",
+        },
+
+        thumbnail: {
+            type: String,
+            default: "",
+        },
+    },
+],
+
+//====================================================
+// Learning PDFs
+//====================================================
+
+pdfs: [
+    {
+        title: {
+            type: String,
+            default: "",
+        },
+
+        url: {
+            type: String,
+            default: "",
+        },
+
+        source: {
+            type: String,
+            default: "",
+        },
+    },
+],
 
     // Generated Verification Questions
     questions: {

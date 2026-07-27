@@ -1,117 +1,452 @@
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
+const LearningVerification = require("../models/learningVerification.model");
+const {
+    generateQuestionExplanation: generateLearningResourcesAI,
+} = require("../utils/ai/question.ai");
+
 const Paper = require("../models/paper.model");
 const User = require("../models/user.model");
 const Children = require("../models/child.model");
-const QuestionExplanation = require("../models/questionExplanation.model");
+
+// NEW MODEL
+const LearningResource = require("../models/learningResource.model");
+
 const {
-  successResponse,
-  errorResponse,
-  customErrorResponse,
+    successResponse,
+    errorResponse,
+    customErrorResponse,
 } = require("../utils/response.dto");
+
 const {
-  getGenerateQuestion,
-  generateQuestionExplanation: generateQuestionExplanationAI,
+    getGenerateQuestion,
+    generateQuestionExplanation: generateLearningResourcesAI,
 } = require("../utils/question.ai");
+
 const { generateOTP } = require("../utils/generate.otp");
 
-const EXPLANATION_PENDING_MESSAGE =
-  "Explanation generation in progress. Please try again later.";
+//=====================================================
+// Learning Resource Constants
+//=====================================================
 
-const generateExplanationsSequentially = async (paperData, questionNumbers = []) => {
-  const paper = paperData?.toObject ? paperData.toObject() : paperData;
-  const paperId =
-    paper?._id?.toString?.() || paper?.id?.toString?.() || paper?.questionId;
+const LEARNING_RESOURCE_PENDING_MESSAGE =
+    "Learning resources are being prepared. Please try again in a few moments.";
 
-  if (!paper || !paperId) {
-    console.error("Invalid paper data provided for explanation generation");
-    return;
-  }
+const LearningVerification = require("../models/learningVerification.model");
 
-  const uniqueNumbers = [
-    ...new Set(
-      questionNumbers
-        .map((num) => Number(num))
-        .filter((num) => Number.isFinite(num))
-    ),
-  ].sort((a, b) => a - b);
+const {
+    buildSearchQueries,
+    searchYoutubeResources,
+    searchPdfResources,
+} = require("../utils/learningResource");
 
-  let explanationDoc;
-  try {
-    explanationDoc = await QuestionExplanation.findOne({
-      questionId: paperId,
-      isDeleted: false,
-    });
+const generateLearningResourcesSequentially = async (
+    paperData,
+    questionNumbers = []
+) => {
 
-    if (uniqueNumbers.length === 0) {
-      return;
+    const paper =
+        paperData?.toObject
+            ? paperData.toObject()
+            : paperData;
+
+    if (!paper) {
+
+        console.error("Invalid paper.");
+
+        return;
+
     }
 
-    for (const questionNumber of uniqueNumbers) {
-      const existingExplanation =
-        explanationDoc?.explanations?.find(
-          (exp) => exp.questionNumber === questionNumber
-        );
+    const uniqueQuestionNumbers = [
 
-      if (existingExplanation) {
-        continue;
-      }
+        ...new Set(
 
-      const questionDataPayload = {
-        subject: paper.subject,
-        syllabus: paper.syllabus,
-        className: paper.className || paper.class,
-        chapter_from: paper.chapter_from,
-        //chapter_to: paper.chapter_to,
-        language: paper.language,
-        no_of_question: paper.no_of_question,
-        questions: paper.questions,
-        questionNumber,
-      };
+            questionNumbers
 
-      let aiResponse;
+                .map(Number)
 
-      try {
-        aiResponse = await generateQuestionExplanationAI(questionDataPayload);
-      } catch (error) {
-        console.error(
-          `Failed to generate explanation for question ${questionNumber} of paper ${paperId}:`,
-          error
-        );
-        continue;
-      }
+                .filter(Number.isFinite)
 
-      const newExplanation = {
-        questionNumber,
-        explanation: aiResponse.explanation,
-        references: aiResponse.references,
-        generatedAt: new Date(),
-      };
+        )
 
-      if (explanationDoc) {
-        explanationDoc.explanations.push(newExplanation);
-        explanationDoc = await explanationDoc.save();
-      } else {
-        explanationDoc = await new QuestionExplanation({
-          questionId: paperId,
-          explanations: [newExplanation],
-        }).save();
-      }
+    ];
+
+    for (const questionNumber of uniqueQuestionNumbers) {
+
+        try {
+
+            //---------------------------------------------------
+            // Original Question
+            //---------------------------------------------------
+
+            const originalQuestion =
+
+                paper.questions.find(
+
+                    q =>
+
+                        Number(q.questionNumber) ===
+
+                        Number(questionNumber)
+
+                );
+
+            if (!originalQuestion) {
+
+                console.log(
+
+                    `Question ${questionNumber} not found.`
+
+                );
+
+                continue;
+
+            }
+
+            //---------------------------------------------------
+            // Already Generated?
+            //---------------------------------------------------
+
+            const alreadyExists =
+
+                await LearningVerification.findOne({
+
+                    paper: paper._id,
+
+                    questionIndex: questionNumber,
+
+                });
+
+            if (alreadyExists) {
+
+                continue;
+
+            }
+
+            //---------------------------------------------------
+            // AI
+            //---------------------------------------------------
+
+            const aiResponse =
+
+                await generateLearningResourcesAI({
+
+                    className:
+
+                        paper.className ||
+
+                        paper.class,
+
+                    subject:
+
+                        paper.subject,
+
+                    syllabus:
+
+                        paper.syllabus,
+
+                    chapter_from:
+
+                        paper.chapter_from,
+
+                    language:
+
+                        paper.language,
+
+                    questionNumber,
+
+                    questions:
+
+                        paper.questions,
+
+                });
+
+            //---------------------------------------------------
+            // Search Queries
+            //---------------------------------------------------
+
+            const {
+
+                youtubeSearch,
+
+                pdfSearch,
+
+            } = buildSearchQueries({
+
+                topic:
+
+                    aiResponse.topic,
+
+                className:
+
+                    paper.className ||
+
+                    paper.class,
+
+                syllabus:
+
+                    paper.syllabus,
+
+                language:
+
+                    paper.language,
+
+            });
+
+            //---------------------------------------------------
+            // Fetch Resources
+            //---------------------------------------------------
+
+            
+            //---------------------------------------------------
+            // Save
+            //---------------------------------------------------
+
+            await LearningVerification.create({
+
+                paper:
+
+                    paper._id,
+
+                questionIndex:
+
+                    questionNumber,
+
+                originalQuestion,
+
+                topic:
+
+                    aiResponse.topic,
+
+                learningObjective:
+
+                    aiResponse.learningObjective,
+
+                keywords:
+
+                    aiResponse.keywords ||
+
+                    [],
+
+                videos,
+
+                pdfs,
+
+                questions: [],
+
+                totalQuestions: 0,
+
+                score: 0,
+
+                scorePercentage: 0,
+
+                status: "Pending",
+
+                attempts: 0,
+
+                createdBy:
+
+                    paper.author ||
+
+                    paper.authorId,
+
+            });
+
+            console.log(
+
+                `Learning resources generated for Question ${questionNumber}`
+
+            );
+
+        }
+
+        catch (error) {
+
+            console.error(
+
+                `Learning Resource Error (Question ${questionNumber})`,
+
+                error.message
+
+            );
+
+        }
+
     }
-  } catch (error) {
-    console.error("Error during background explanation generation:", error);
-  } finally {
+
+};
+
+exports.getLearningResources = async (req, res) => {
+
     try {
-      await Paper.findByIdAndUpdate(paperId, {
-        isExplanationGenerated: true,
-      });
-    } catch (updateError) {
-      console.error(
-        `Failed to update explanation status for paper ${paperId}:`,
-        updateError
-      );
+
+        const { id } = req.params;
+
+        const learning = await LearningVerification.findById(id);
+
+        if (!learning) {
+
+            return res.status(404).json({
+
+                success: false,
+
+                message: "Learning resource not found."
+
+            });
+
+        }
+
+        //------------------------------------------------
+        // Already Cached
+        //------------------------------------------------
+
+        if (
+            learning.videos.length > 0 ||
+            learning.pdfs.length > 0
+        ) {
+
+            return res.json({
+
+                success: true,
+
+                data: learning
+
+            });
+
+        }
+
+        //------------------------------------------------
+        // Build Search Queries
+        //------------------------------------------------
+
+        const {
+
+            youtubeSearch,
+
+            pdfSearch,
+
+        } = buildSearchQueries({
+
+            topic: learning.topic,
+
+            className:
+                learning.originalQuestion?.className || "",
+
+            syllabus:
+                learning.originalQuestion?.syllabus || "",
+
+            language:
+                learning.originalQuestion?.language || "English",
+
+        });
+
+        //------------------------------------------------
+        // Search Resources
+        //------------------------------------------------
+
+        const videos = await searchYoutubeResources(
+            youtubeSearch
+        );
+
+        const pdfs = await searchPdfResources(
+            pdfSearch
+        );
+
+        //------------------------------------------------
+        // Cache
+        //------------------------------------------------
+
+        learning.videos = videos;
+
+        learning.pdfs = pdfs;
+
+        await learning.save();
+
+        //------------------------------------------------
+        // Response
+        //------------------------------------------------
+
+        return res.json({
+
+            success: true,
+
+            data: learning
+
+        });
+
     }
-  }
+
+    catch (error) {
+
+        console.error(error);
+
+        return res.status(500).json({
+
+            success: false,
+
+            message: error.message
+
+        });
+
+    }
+
+};
+
+exports.getAllLearningResources = async (req, res) => {
+
+    try {
+
+        const { paperId } = req.params;
+
+        const resources = await LearningVerification
+            .find({ paper: paperId })
+            .sort({ questionIndex: 1 })
+            .select(
+                "_id " +
+                "questionIndex " +
+                "topic " +
+                "learningObjective " +
+                "status " +
+                "score " +
+                "totalQuestions " +
+                "scorePercentage " +
+                "verifiedAt " +
+                "videos " +
+                "pdfs"
+            );
+
+        return res.status(200).json({
+
+            success: true,
+
+            total: resources.length,
+
+            data: resources
+
+        });
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "getAllLearningResources Error:",
+            error
+        );
+
+        return res.status(500).json({
+
+            success: false,
+
+            message: "Failed to fetch learning resources.",
+
+            error: error.message
+
+        });
+
+    }
+
 };
 
 exports.createPaper = async (req, res) => {
@@ -486,8 +821,11 @@ exports.questionAnswer = async (req, res) => {
 
     if (questionNumbers.length > 0) {
       setImmediate(() => {
-        generateExplanationsSequentially(responsePayload, questionNumbers);
-      });
+    generateLearningResourcesSequentially(
+        responsePayload,
+        questionNumbers
+    );
+});
     }
 
     return successResponse(
