@@ -224,17 +224,22 @@ const generateLearningResources = async (questionData) => {
 
             }
 
-           if (
+       if (
     parsedResponse.questions.some(
         question =>
+            !question.questionNumber ||
             !question.topic ||
             !question.learningObjective ||
-            !Array.isArray(question.keywords)
+            !Array.isArray(question.keywords) ||
+            !Array.isArray(question.youtubeSearch) ||
+            !Array.isArray(question.pdfSearch)
     )
 ) {
+
     throw new Error(
         "Invalid learning resource response."
     );
+
 }
 
 return parsedResponse;
