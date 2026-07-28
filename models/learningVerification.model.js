@@ -101,7 +101,15 @@ keywords: {
     type: [String],
     default: [],
 },
+youtubeSearch: {
+    type: [String],
+    default: [],
+},
 
+pdfSearch: {
+    type: [String],
+    default: [],
+},
 //====================================================
 // Learning Videos
 //====================================================
