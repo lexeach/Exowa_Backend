@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const LearningVerification = require("../models/learningVerification.model");
 const {
-    getLearningResources: generateLearningResourcesAI,
+    generateQuestionExplanation: generateLearningResourcesAI,
 } = require("../utils/ai/question.ai");
 
 const Paper = require("../models/paper.model");
@@ -10,7 +10,6 @@ const User = require("../models/user.model");
 const Children = require("../models/child.model");
 
 // NEW MODEL
-const LearningResource = require("../models/learningResource.model");
 
 const {
     successResponse,
@@ -18,10 +17,6 @@ const {
     customErrorResponse,
 } = require("../utils/response.dto");
 
-const {
-    getGenerateQuestion,
-    getLearningResources: generateLearningResourcesAI,
-} = require("../utils/question.ai");
 
 const { generateOTP } = require("../utils/generate.otp");
 
@@ -32,7 +27,6 @@ const { generateOTP } = require("../utils/generate.otp");
 const LEARNING_RESOURCE_PENDING_MESSAGE =
     "Learning resources are being prepared. Please try again in a few moments.";
 
-const LearningVerification = require("../models/learningVerification.model");
 
 const {
     buildSearchQueries,
@@ -166,39 +160,7 @@ const generateLearningResourcesSequentially = async (
             // Search Queries
             //---------------------------------------------------
 
-            const {
-
-                youtubeSearch,
-
-                pdfSearch,
-
-            } = buildSearchQueries({
-
-                topic:
-
-                    aiResponse.topic,
-
-                className:
-
-                    paper.className ||
-
-                    paper.class,
-
-                syllabus:
-
-                    paper.syllabus,
-
-                language:
-
-                    paper.language,
-
-            });
-
-            //---------------------------------------------------
-            // Fetch Resources
-            //---------------------------------------------------
-
-            
+          
             //---------------------------------------------------
             // Save
             //---------------------------------------------------
@@ -229,10 +191,10 @@ const generateLearningResourcesSequentially = async (
 
                     [],
 
-                videos,
+                videos: [],
 
-                pdfs,
-
+                 pdfs: [],
+				
                 questions: [],
 
                 totalQuestions: 0,
@@ -833,185 +795,6 @@ exports.questionAnswer = async (req, res) => {
   } */
 };
 
-exports.getLearningResources = async (req, res) => {
-  try {
-    const { questionId } = req.params;
-    const { questionNumber } = req.query;
-
-    if (!questionId) {
-      return res.status(400).json({
-        success: false,
-        message: "Question ID is required.",
-      });
-    }
-
-    const explanationDoc = await QuestionExplanation.findOne({
-      questionId,
-      isDeleted: false,
-    });
-
-    const hasQuestionNumber = questionNumber !== undefined;
-    let questionNum = null;
-    if (hasQuestionNumber) {
-      questionNum = Number(questionNumber);
-
-      if (!Number.isFinite(questionNum)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid question number.",
-        });
-      }
-    }
-
-    let paperDoc = null;
-    const ensurePaperLoaded = async () => {
-      if (!paperDoc) {
-        paperDoc = await Paper.findById(questionId);
-      }
-      return paperDoc;
-    };
-
-    if (!explanationDoc) {
-      const paper = await ensurePaperLoaded();
-
-      if (!paper) {
-        return res.status(404).json({
-          success: false,
-          message: "Question not found.",
-        });
-      }
-
-      if (hasQuestionNumber) {
-        const questionExists = paper.questions?.some(
-          (question) => Number(question.questionNumber) === questionNum
-        );
-
-        if (!questionExists) {
-          return res.status(404).json({
-            success: false,
-            message: `Question number ${questionNum} not found in this paper.`,
-          });
-        }
-      }
-
-      if (paper.isExplanationGenerated) {
-        const numbersToGenerate = hasQuestionNumber
-          ? [questionNum]
-          : (paper.questions || [])
-              .map((question) => Number(question.questionNumber))
-              .filter((num) => Number.isFinite(num));
-
-        if (numbersToGenerate.length > 0) {
-          setImmediate(() => {
-            generateLearningResourcesSequentially(paper, numbersToGenerate);
-          });
-        }
-      }
-
-      return successResponse(res, 404, EXPLANATION_PENDING_MESSAGE);
-    }
-
-    if (hasQuestionNumber) {
-      const explanation = explanationDoc.explanations.find(
-        (exp) => exp.questionNumber === questionNum
-      );
-
-      if (!explanation) {
-        const paper = await ensurePaperLoaded();
-
-        if (!paper) {
-          return res.status(404).json({
-            success: false,
-            message: "Question not found.",
-          });
-        }
-
-        const questionExists = paper.questions?.some(
-          (question) => Number(question.questionNumber) === questionNum
-        );
-
-        if (!questionExists) {
-          return res.status(404).json({
-            success: false,
-            message: `Question number ${questionNum} not found in this paper.`,
-          });
-        }
-
-        if (paper.isExplanationGenerated) {
-          setImmediate(() => {
-            generateLearningResourcesSequentially(paper, [questionNum]);
-          });
-        }
-
-        return successResponse(res, 404, EXPLANATION_PENDING_MESSAGE);
-      }
-
-      return successResponse(res, 200, "Explanation retrieved successfully", {
-        questionId: explanationDoc.questionId,
-        questionNumber: questionNum,
-        explanation: explanation.explanation,
-        references: explanation.references,
-        generatedAt: explanation.generatedAt,
-      });
-    }
-
-    return successResponse(
-      res,
-      200,
-      "Explanations retrieved successfully",
-      {
-        questionId: explanationDoc.questionId,
-        totalExplanations: explanationDoc.explanations.length,
-        explanations: explanationDoc.explanations,
-      }
-    );
-  } catch (error) {
-    console.error("Error fetching explanations:", error);
-    return errorResponse(res, error);
-  }
-};
-
-exports.getAllQuestionExplanations = async (req, res) => {
-  try {
-    const { questionId } = req.params;
-
-
-    if (!questionId) {
-      return res.status(400).json({
-        success: false,
-        message: "Question ID is required.",
-      });
-    }
-
-    // Check if explanation document exists for this questionId
-    const explanationDoc = await QuestionExplanation.findOne({
-      questionId: questionId,
-      isDeleted: false
-    });
-
-    if (!explanationDoc) {
-      return res.status(404).json({
-        success: false,
-        message: "No explanations found for this question.",
-      });
-    }
-
-    return successResponse(
-      res,
-      200,
-      "All explanations retrieved successfully",
-      {
-        questionId: explanationDoc.questionId,
-        totalExplanations: explanationDoc.explanations.length,
-        explanations: explanationDoc.explanations
-      }
-    );
-
-  } catch (error) {
-    console.error("Error fetching all explanations:", error);
-    return errorResponse(res, error);
-  }
-};
 
 exports.getChildrenLogin = async (req, res) => {
   try {
