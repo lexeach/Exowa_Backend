@@ -157,6 +157,7 @@ const generateLearningResourcesSequentially = async (
                 });
 			if (
     !aiResponse ||
+    typeof aiResponse !== "object" ||
     !aiResponse.topic
 ) {
 
@@ -303,14 +304,19 @@ exports.getLearningResources = async (req, res) => {
 
             topic: learning.topic,
 
-            className:
-                learning.originalQuestion?.className || "",
+            const paper = await Paper.findById(learning.paper)
+    .select("className class syllabus language");
 
-            syllabus:
-                learning.originalQuestion?.syllabus || "",
+className:
+    paper?.className ||
+    paper?.class ||
+    "",
 
-            language:
-                learning.originalQuestion?.language || "English",
+syllabus:
+    paper?.syllabus || "",
+
+language:
+    paper?.language || "English",
 
         });
 
@@ -318,14 +324,10 @@ exports.getLearningResources = async (req, res) => {
 // Search Resources
 //------------------------------------------------
 
-const videos = await searchYoutubeResources(
-    youtubeSearch
-);
-
-const pdfs = await searchPdfResources(
-    pdfSearch
-);
-
+const [videos, pdfs] = await Promise.all([
+    searchYoutubeResources(youtubeSearch),
+    searchPdfResources(pdfSearch),
+]);
 //------------------------------------------------
 // Cache
 //------------------------------------------------
