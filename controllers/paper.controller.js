@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
+const { getGenerateQuestion } = require("../utils/question.ai");
 const LearningVerification = require("../models/learningVerification.model");
 const {
     generateQuestionExplanation: generateLearningResourcesAI,
