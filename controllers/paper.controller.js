@@ -40,6 +40,10 @@ const generateLearningResourcesSequentially = async (
     questionNumbers = []
 ) => {
 
+    //---------------------------------------------------
+    // Normalize Paper
+    //---------------------------------------------------
+
     const paper =
         paperData?.toObject
             ? paperData.toObject()
@@ -51,7 +55,7 @@ const generateLearningResourcesSequentially = async (
     }
 
     //---------------------------------------------------
-    // Unique Wrong Questions
+    // Unique Question Numbers
     //---------------------------------------------------
 
     const uniqueQuestionNumbers = [
@@ -68,45 +72,75 @@ const generateLearningResourcesSequentially = async (
     }
 
     //---------------------------------------------------
-    // Collect Wrong Questions
+    // Collect Questions To Process
     //---------------------------------------------------
 
-    const wrongQuestions = [];
+    const pendingQuestions = [];
 
     for (const questionNumber of uniqueQuestionNumbers) {
 
-        const originalQuestion = paper.questions.find(
-            q =>
-                Number(q.questionNumber) ===
-                Number(questionNumber)
-        );
+        const originalQuestion =
+            paper.questions.find(
+                q =>
+                    Number(q.questionNumber) ===
+                    Number(questionNumber)
+            );
 
         if (!originalQuestion) {
+
             console.log(
                 `Question ${questionNumber} not found.`
             );
+
             continue;
         }
 
         const alreadyExists =
             await LearningVerification.findOne({
+
                 paper: paper._id,
+
                 questionIndex: questionNumber,
+
             });
 
         if (alreadyExists) {
+
+            console.log(
+                `Learning resource already exists for Question ${questionNumber}`
+            );
+
             continue;
         }
 
-        wrongQuestions.push(originalQuestion);
+        pendingQuestions.push({
+
+            questionNumber,
+
+            originalQuestion,
+
+        });
+
     }
 
-    if (wrongQuestions.length === 0) {
+    if (pendingQuestions.length === 0) {
+
         console.log(
-            "Learning resources already exist."
+            "No new learning resources to generate."
         );
+
         return;
+
     }
+
+    //---------------------------------------------------
+    // Prepare Gemini Input
+    //---------------------------------------------------
+
+    const questionsForAI =
+        pendingQuestions.map(
+            item => item.originalQuestion
+        );
 
     //---------------------------------------------------
     // Single Gemini Call
@@ -136,7 +170,7 @@ const generateLearningResourcesSequentially = async (
                     paper.language,
 
                 questions:
-                    wrongQuestions,
+                    questionsForAI,
 
             });
 
@@ -148,79 +182,90 @@ const generateLearningResourcesSequentially = async (
         );
 
         return;
+
     }
 
     //---------------------------------------------------
-    // Validate AI Response
+    // Validate Response
     //---------------------------------------------------
 
     if (
         !aiResponse ||
+        typeof aiResponse !== "object" ||
         !Array.isArray(aiResponse.questions)
     ) {
 
-        console.log(
+        console.error(
             "Invalid bulk AI response."
         );
 
         return;
+
+    }
+
+    if (aiResponse.questions.length === 0) {
+
+        console.error(
+            "Gemini returned empty learning resources."
+        );
+
+        return;
+
     }
 
     //---------------------------------------------------
-    // Create Lookup Map
+    // Create Fast Lookup Map
     //---------------------------------------------------
 
     const aiMap = new Map();
 
     for (const item of aiResponse.questions) {
 
-        aiMap.set(
-            Number(item.questionNumber),
-            item
-        );
-    }
+        if (
+            item &&
+            item.questionNumber !== undefined
+        ) {
 
+            aiMap.set(
+                Number(item.questionNumber),
+                item
+            );
+
+        }
+
+    }
 
     //---------------------------------------------------
     // Save Learning Resources
     //---------------------------------------------------
 
-    for (const questionNumber of uniqueQuestionNumbers) {
+    for (const pending of pendingQuestions) {
 
         try {
 
-            const aiItem = aiMap.get(
-                Number(questionNumber)
-            );
+            const {
+
+                questionNumber,
+
+                originalQuestion,
+
+            } = pending;
+
+            const aiItem =
+                aiMap.get(
+                    Number(questionNumber)
+                );
 
             if (!aiItem) {
 
                 console.log(
-                    `No AI data found for Question ${questionNumber}`
+                    `No AI response found for Question ${questionNumber}`
                 );
 
                 continue;
+
             }
 
-            const originalQuestion = paper.questions.find(
-                q =>
-                    Number(q.questionNumber) ===
-                    Number(questionNumber)
-            );
-
-            if (!originalQuestion) {
-                continue;
-            }
-
-            const alreadyExists =
-                await LearningVerification.findOne({
-                    paper: paper._id,
-                    questionIndex: questionNumber,
-                });
-
-            if (alreadyExists) {
-                continue;
-            }
 
             await LearningVerification.create({
 
@@ -270,20 +315,20 @@ const generateLearningResourcesSequentially = async (
                 createdBy:
                     paper.author ||
                     paper.authorId,
+
             });
 
             console.log(
                 `Learning resources generated for Question ${questionNumber}`
             );
 
-
-                     }
+        }
 
         catch (error) {
 
             console.error(
 
-                `Learning Resource Error (Question ${questionNumber})`,
+                `Learning Resource Error (Question ${pending.questionNumber})`,
 
                 error.message
 
@@ -299,7 +344,7 @@ const generateLearningResourcesSequentially = async (
 
     console.log(
 
-        `Learning resources generated successfully for ${uniqueQuestionNumbers.length} question(s).`
+        `Successfully generated learning resources for ${pendingQuestions.length} question(s).`
 
     );
 
