@@ -155,6 +155,17 @@ const generateLearningResourcesSequentially = async (
                         paper.questions,
 
                 });
+			if (
+    !aiResponse ||
+    !aiResponse.topic
+) {
+
+    console.log(
+        `Skipping Question ${questionNumber}: Invalid AI response.`
+    );
+
+    continue;
+}
 
             //---------------------------------------------------
             // Search Queries
@@ -303,19 +314,25 @@ exports.getLearningResources = async (req, res) => {
 
         });
 
-        //------------------------------------------------
-        // Search Resources
-        //------------------------------------------------
+       //------------------------------------------------
+// Search Resources
+//------------------------------------------------
 
-      
-        //------------------------------------------------
-        // Cache
-        //------------------------------------------------
+const videos = await searchYoutubeResources(
+    youtubeSearch
+);
 
-        learning.videos = videos;
+const pdfs = await searchPdfResources(
+    pdfSearch
+);
 
-        learning.pdfs = pdfs;
+//------------------------------------------------
+// Cache
+//------------------------------------------------
 
+learning.videos = videos;
+
+learning.pdfs = pdfs;
         await learning.save();
 
         //------------------------------------------------
@@ -752,7 +769,7 @@ exports.questionAnswer = async (req, res) => {
         otp: null,
         // children: userId,
         // childrenId: userId,
-        isExplanationGenerated: false,
+        isLearningResourceGenerated: false,
       },
       { new: true }
     );
