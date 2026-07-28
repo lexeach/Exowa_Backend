@@ -184,24 +184,25 @@ const generateLearningResources = async (questionData) => {
 
             if (specificQuestion) {
 
-                if (
+if (
 
-                    !parsedResponse.topic ||
+    !parsedResponse.topic ||
 
-                    !parsedResponse.learningObjective ||
+    !parsedResponse.learningObjective ||
 
-                   !Array.isArray(parsedResponse.keywords)
+    !Array.isArray(parsedResponse.keywords) ||
 
-                ) {
+    !Array.isArray(parsedResponse.youtubeSearch) ||
 
-                    throw new Error(
+    !Array.isArray(parsedResponse.pdfSearch)
 
-                        "Invalid learning resource response."
+) {
 
-                    );
+    throw new Error(
+        "Invalid learning resource response."
+    );
 
-                }
-
+}
                 return parsedResponse;
 
             }
