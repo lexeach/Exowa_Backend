@@ -81,7 +81,7 @@ const learningVerificationSchema = new mongoose.Schema(
     // AI Generated Learning Content
     learningContent: {
       type: String,
-      default: [],
+      default: "",
     },
     //====================================================
 // AI Learning Metadata
