@@ -46,168 +46,215 @@ const generateLearningResourcesSequentially = async (
             : paperData;
 
     if (!paper) {
-
         console.error("Invalid paper.");
-
         return;
-
     }
 
+    //---------------------------------------------------
+    // Unique Wrong Questions
+    //---------------------------------------------------
+
     const uniqueQuestionNumbers = [
-
         ...new Set(
-
             questionNumbers
-
                 .map(Number)
-
                 .filter(Number.isFinite)
-
         )
-
     ];
+
+    if (uniqueQuestionNumbers.length === 0) {
+        console.log("No wrong questions found.");
+        return;
+    }
+
+    //---------------------------------------------------
+    // Collect Wrong Questions
+    //---------------------------------------------------
+
+    const wrongQuestions = [];
+
+    for (const questionNumber of uniqueQuestionNumbers) {
+
+        const originalQuestion = paper.questions.find(
+            q =>
+                Number(q.questionNumber) ===
+                Number(questionNumber)
+        );
+
+        if (!originalQuestion) {
+            console.log(
+                `Question ${questionNumber} not found.`
+            );
+            continue;
+        }
+
+        const alreadyExists =
+            await LearningVerification.findOne({
+                paper: paper._id,
+                questionIndex: questionNumber,
+            });
+
+        if (alreadyExists) {
+            continue;
+        }
+
+        wrongQuestions.push(originalQuestion);
+    }
+
+    if (wrongQuestions.length === 0) {
+        console.log(
+            "Learning resources already exist."
+        );
+        return;
+    }
+
+    //---------------------------------------------------
+    // Single Gemini Call
+    //---------------------------------------------------
+
+    let aiResponse;
+
+    try {
+
+        aiResponse =
+            await generateLearningResourcesAI({
+
+                className:
+                    paper.className ||
+                    paper.class,
+
+                subject:
+                    paper.subject,
+
+                syllabus:
+                    paper.syllabus,
+
+                chapter_from:
+                    paper.chapter_from,
+
+                language:
+                    paper.language,
+
+                questions:
+                    wrongQuestions,
+
+            });
+
+    } catch (error) {
+
+        console.error(
+            "Bulk Learning AI Error:",
+            error.message
+        );
+
+        return;
+    }
+
+    //---------------------------------------------------
+    // Validate AI Response
+    //---------------------------------------------------
+
+    if (
+        !aiResponse ||
+        !Array.isArray(aiResponse.questions)
+    ) {
+
+        console.log(
+            "Invalid bulk AI response."
+        );
+
+        return;
+    }
+
+    //---------------------------------------------------
+    // Create Lookup Map
+    //---------------------------------------------------
+
+    const aiMap = new Map();
+
+    for (const item of aiResponse.questions) {
+
+        aiMap.set(
+            Number(item.questionNumber),
+            item
+        );
+    }
+
+
+    //---------------------------------------------------
+    // Save Learning Resources
+    //---------------------------------------------------
 
     for (const questionNumber of uniqueQuestionNumbers) {
 
         try {
 
-            //---------------------------------------------------
-            // Original Question
-            //---------------------------------------------------
+            const aiItem = aiMap.get(
+                Number(questionNumber)
+            );
 
-            const originalQuestion =
-
-                paper.questions.find(
-
-                    q =>
-
-                        Number(q.questionNumber) ===
-
-                        Number(questionNumber)
-
-                );
-
-            if (!originalQuestion) {
+            if (!aiItem) {
 
                 console.log(
-
-                    `Question ${questionNumber} not found.`
-
+                    `No AI data found for Question ${questionNumber}`
                 );
 
                 continue;
-
             }
 
-            //---------------------------------------------------
-            // Already Generated?
-            //---------------------------------------------------
+            const originalQuestion = paper.questions.find(
+                q =>
+                    Number(q.questionNumber) ===
+                    Number(questionNumber)
+            );
+
+            if (!originalQuestion) {
+                continue;
+            }
 
             const alreadyExists =
-
                 await LearningVerification.findOne({
-
                     paper: paper._id,
-
                     questionIndex: questionNumber,
-
                 });
 
             if (alreadyExists) {
-
                 continue;
-
             }
-
-            //---------------------------------------------------
-            // AI
-            //---------------------------------------------------
-
-            const aiResponse =
-
-                await generateLearningResourcesAI({
-
-                    className:
-
-                        paper.className ||
-
-                        paper.class,
-
-                    subject:
-
-                        paper.subject,
-
-                    syllabus:
-
-                        paper.syllabus,
-
-                    chapter_from:
-
-                        paper.chapter_from,
-
-                    language:
-
-                        paper.language,
-
-                    questionNumber,
-
-                    questions:
-
-                        paper.questions,
-
-                });
-			if (
-    !aiResponse ||
-    typeof aiResponse !== "object" ||
-    !aiResponse.topic
-) {
-
-    console.log(
-        `Skipping Question ${questionNumber}: Invalid AI response.`
-    );
-
-    continue;
-}
-
-            //---------------------------------------------------
-            // Search Queries
-            //---------------------------------------------------
-
-          
-            //---------------------------------------------------
-            // Save
-            //---------------------------------------------------
 
             await LearningVerification.create({
 
-                paper:
+                paper: paper._id,
 
-                    paper._id,
-
-                questionIndex:
-
-                    questionNumber,
+                questionIndex: questionNumber,
 
                 originalQuestion,
 
                 topic:
-
-                    aiResponse.topic,
+                    aiItem.topic || "",
 
                 learningObjective:
-
-                    aiResponse.learningObjective,
+                    aiItem.learningObjective || "",
 
                 keywords:
+                    Array.isArray(aiItem.keywords)
+                        ? aiItem.keywords
+                        : [],
 
-                    aiResponse.keywords ||
+                youtubeSearch:
+                    Array.isArray(aiItem.youtubeSearch)
+                        ? aiItem.youtubeSearch
+                        : [],
 
-                    [],
+                pdfSearch:
+                    Array.isArray(aiItem.pdfSearch)
+                        ? aiItem.pdfSearch
+                        : [],
 
                 videos: [],
 
-                 pdfs: [],
-				
+                pdfs: [],
+
                 questions: [],
 
                 totalQuestions: 0,
@@ -221,20 +268,16 @@ const generateLearningResourcesSequentially = async (
                 attempts: 0,
 
                 createdBy:
-
                     paper.author ||
-
                     paper.authorId,
-
             });
 
             console.log(
-
                 `Learning resources generated for Question ${questionNumber}`
-
             );
 
-        }
+
+                     }
 
         catch (error) {
 
@@ -250,7 +293,22 @@ const generateLearningResourcesSequentially = async (
 
     }
 
+    //---------------------------------------------------
+    // Finished
+    //---------------------------------------------------
+
+    console.log(
+
+        `Learning resources generated successfully for ${uniqueQuestionNumbers.length} question(s).`
+
+    );
+
 };
+
+
+
+
+
 
 exports.getLearningResources = async (req, res) => {
 
