@@ -87,18 +87,12 @@ Return ONLY valid JSON.
 
     "learningObjective":"",
 
-    "youtubeSearch":[
+    "keywords":[
         "",
-        "",
-        ""
-    ],
-
-    "pdfSearch":[
         "",
         ""
     ]
 }
-
 Rules
 
 1. Do NOT explain the answer.
@@ -111,13 +105,13 @@ Rules
 
 5. Generate ONE concise learning objective.
 
-6. Generate EXACTLY 3 YouTube search queries.
+6. Generate EXACTLY 3 keywords or short search phrases.
 
-7. Generate EXACTLY 2 PDF search queries.
+7. Keywords must describe the concept, not URLs.
 
-8. Queries should be suitable for Class ${questionData.className}.
+8. Do NOT generate YouTube queries.
 
-9. Queries must include class and syllabus when useful.
+9. Do NOT generate PDF queries.
 
 10. Return ONLY JSON.
 
@@ -143,28 +137,19 @@ ${JSON.stringify(questionData.questions, null, 2)}
 Return ONLY valid JSON.
 
 {
-    "questions":[
-        {
-            "questionNumber":1,
-
-            "topic":"",
-
-            "learningObjective":"",
-
-            "youtubeSearch":[
-                "",
-                "",
-                ""
-            ],
-
-            "pdfSearch":[
-                "",
-                ""
-            ]
-        }
-    ]
+  "questions":[
+    {
+      "questionNumber":1,
+      "topic":"",
+      "learningObjective":"",
+      "keywords":[
+        "",
+        "",
+        ""
+      ]
+    }
+  ]
 }
-
 Rules
 
 1. Include EVERY question.
