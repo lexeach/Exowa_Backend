@@ -119,10 +119,14 @@ Rules
 
     }
 
-    return `
+   //---------------------------------------------------------
+// BULK (ONLY WRONG QUESTIONS)
+//---------------------------------------------------------
+
+return `
 You are an expert education assistant.
 
-Generate learning resources for every question in this paper.
+Your task is to generate learning metadata for ONLY the wrong questions provided.
 
 Subject: ${questionData.subject}
 Board: ${questionData.syllabus}
@@ -130,7 +134,7 @@ Class: ${questionData.className}
 Chapter: ${questionData.chapter_from}
 Language: ${questionData.language}
 
-Questions:
+Wrong Questions:
 
 ${JSON.stringify(questionData.questions, null, 2)}
 
@@ -140,33 +144,43 @@ Return ONLY valid JSON.
   "questions":[
     {
       "questionNumber":1,
+
       "topic":"",
+
       "learningObjective":"",
+
       "keywords":[
         "",
+        "",
+        ""
+      ],
+
+      "youtubeSearch":[
+        "",
+        "",
+        ""
+      ],
+
+      "pdfSearch":[
         "",
         ""
       ]
     }
   ]
 }
+
 Rules
 
-1. Include EVERY question.
-
-2. Do NOT explain answers.
-
-3. Do NOT generate YouTube links.
-
-4. Do NOT generate PDF links.
-
-5. Return EXACTLY one object for each question.
-
-6. Generate exactly 3 YouTube search queries.
-
-7. Generate exactly 2 PDF search queries.
-
-8. Return ONLY valid JSON.
+1. Process ONLY the questions supplied.
+2. Do NOT generate questions that are not supplied.
+3. Do NOT explain answers.
+4. Generate ONE topic.
+5. Generate ONE learning objective.
+6. Generate EXACTLY 3 keywords.
+7. Generate EXACTLY 3 YouTube search phrases.
+8. Generate EXACTLY 2 PDF search phrases.
+9. Do NOT generate URLs.
+10. Return ONLY JSON.
 
 `;
 
