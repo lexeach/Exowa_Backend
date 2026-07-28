@@ -9,8 +9,8 @@ const {
   questionAnswer,
   questionAssign,
   generateQuestionOTP,
-  generateQuestionExplanation,
-  getAllQuestionExplanations
+  getLearningResources,
+  getAllLearningResources
 } = require("../controllers/paper.controller");
 const { auth } = require("../middleware/auth");
 const { verifyOwnership } = require("../middleware/verifyOwnership");
@@ -108,7 +108,6 @@ router.post(
     body("subject").notEmpty().withMessage("Subject is required"),
     body("syllabus").notEmpty().withMessage("Syllabus is required"),
     body("chapter_from").notEmpty().withMessage("Starting chapter is required"),
-    body("chapter_to").notEmpty().withMessage("Ending chapter is required"),
     body("language").notEmpty().withMessage("Language is required"),
   ],
   createPaper
@@ -223,7 +222,11 @@ router.get("/",auth, getPapers);
  *       500:
  *         description: Server error
  */
-router.get("/:questionId/explanations", getAllQuestionExplanations);
+router.get(
+    "/learning/:paperId",
+    auth,
+    getAllLearningResources
+);
 
 /**
  * @swagger
@@ -296,7 +299,11 @@ router.get("/:questionId/explanations", getAllQuestionExplanations);
  *       500:
  *         description: Server error
  */
-router.get("/:questionId/explanation", generateQuestionExplanation);
+router.get(
+    "/learning/resource/:id",
+    auth,
+    getLearningResources
+);
 
 /**
  * @swagger
