@@ -62,31 +62,29 @@ const searchYoutubeResources = async (
 
                 if (videos.length >= 3) break;
 
-                videos.push({
+                if (!item?.id?.videoId) {
+    continue;
+     }
 
-                    youtubeId:
+    videos.push({
 
-                        item.id.videoId,
+    youtubeId:
+        item.id.videoId,
 
-                    title:
+    title:
+        item.snippet?.title || "",
 
-                        item.snippet.title,
+    channel:
+        item.snippet?.channelTitle || "",
 
-                    channel:
+    thumbnail:
+        item.snippet?.thumbnails?.high?.url ||
+        item.snippet?.thumbnails?.default?.url ||
+        "",
 
-                        item.snippet.channelTitle,
+    duration: ""
 
-                    thumbnail:
-
-                        item.snippet.thumbnails?.high?.url ||
-
-                        item.snippet.thumbnails?.default?.url ||
-
-                        "",
-
-                    duration: ""
-
-                });
+     });
 
             }
 
@@ -154,19 +152,20 @@ const searchPdfResources = async (
 
                 if (pdfs.length >= 2) break;
 
-                pdfs.push({
+               if (!item?.link) {
+    continue;
+}
 
-                    title: item.title,
+pdfs.push({
 
-                    url: item.link,
+    title: item.title || "",
 
-                    source:
+    url: item.link,
 
-                        item.displayLink ||
+    source:
+        item.displayLink || ""
 
-                        ""
-
-                });
+});
 
             }
 
