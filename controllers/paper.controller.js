@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const LearningVerification = require("../models/learningVerification.model");
 const {
     generateQuestionExplanation: generateLearningResourcesAI,
-} = require("../utils/ai/question.ai");
+} = require("../utils/question.ai");
 
 const Paper = require("../models/paper.model");
 const User = require("../models/user.model");
