@@ -190,9 +190,7 @@ const generateLearningResources = async (questionData) => {
 
                     !parsedResponse.learningObjective ||
 
-                    !Array.isArray(parsedResponse.youtubeSearch) ||
-
-                    !Array.isArray(parsedResponse.pdfSearch)
+                   !Array.isArray(parsedResponse.keywords)
 
                 ) {
 
@@ -226,7 +224,20 @@ const generateLearningResources = async (questionData) => {
 
             }
 
-            return parsedResponse;
+           if (
+    parsedResponse.questions.some(
+        question =>
+            !question.topic ||
+            !question.learningObjective ||
+            !Array.isArray(question.keywords)
+    )
+) {
+    throw new Error(
+        "Invalid learning resource response."
+    );
+}
+
+return parsedResponse;
 
         }
 
@@ -320,6 +331,6 @@ const generateVerificationQuestions = async ({
 }
 module.exports = {
     getGenerateQuestion,
-    generateQuestionExplanation,
+    generateQuestionExplanation: generateLearningResources,
     generateVerificationQuestions,
 };
