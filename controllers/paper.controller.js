@@ -888,10 +888,24 @@ exports.questionAnswer = async (req, res) => {
       updatedPaper?.toObject ? updatedPaper.toObject() : updatedPaper;
 
     const questionNumbers = Array.isArray(answers)
-      ? answers
-          .map((answer) => answer?.questionNumber)
-          .filter((num) => num !== undefined && num !== null)
-      : [];
+    ? answers
+          .filter(answer => {
+
+              const question =
+                  responsePayload.questions.find(
+                      q =>
+                          Number(q.questionNumber) ===
+                          Number(answer.questionNumber)
+                  );
+
+              return (
+                  question &&
+                  question.correctAnswer !== answer.option
+              );
+
+          })
+          .map(answer => answer.questionNumber)
+    : [];
 
     if (questionNumber && !questionNumbers.includes(questionNumber)) {
       questionNumbers.push(questionNumber);
