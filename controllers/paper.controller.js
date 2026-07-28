@@ -185,6 +185,10 @@ const generateLearningResourcesSequentially = async (
 
     }
 
+	console.log("========== GEMINI RESPONSE ==========");
+console.dir(aiResponse, { depth: null });
+console.log("=====================================");
+
     //---------------------------------------------------
     // Validate Response
     //---------------------------------------------------
@@ -212,9 +216,6 @@ const generateLearningResourcesSequentially = async (
         return;
 
     }
-console.log("========== GEMINI RESPONSE ==========");
-console.dir(aiResponse, { depth: null });
-console.log("=====================================");
 
 	
     //---------------------------------------------------
