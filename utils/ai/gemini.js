@@ -1,29 +1,65 @@
-console.log("******** gemini.JS LOADED ********");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { GoogleGenerativeAI } =
+    require("@google/generative-ai");
 
-const genAI = new GoogleGenerativeAI(
-    process.env.GOOGLE_GEMINI_API_KEY
-);
+const genAI =
+    new GoogleGenerativeAI(
+        process.env.GOOGLE_GEMINI_API_KEY
+    );
 
-const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
-    generationConfig: {
-        responseMimeType: "application/json"
+const model =
+    genAI.getGenerativeModel({
+
+        model:
+            process.env.GEMINI_MODEL ||
+            "gemini-2.5-flash",
+
+        generationConfig: {
+
+            responseMimeType:
+                "application/json"
+
+        }
+
+    });
+
+async function generateJson(prompt) {
+
+    const result =
+        await model.generateContent(prompt);
+
+    const response =
+        await result.response;
+
+    const text =
+        response.text();
+
+    if (!text) {
+
+        throw new Error(
+            "Empty response received from Gemini."
+        );
+
     }
-});
 
-async function generateJson(prompt){
+    try {
 
-    const result = await model.generateContent(prompt);
+        return JSON.parse(text);
 
-    const response = await result.response;
+    } catch (error) {
 
-    const text = response.text();
+        console.error(
+            "Gemini Raw Response:\n",
+            text
+        );
 
-    return JSON.parse(text);
+        throw new Error(
+            "Invalid JSON returned by Gemini."
+        );
+
+    }
 
 }
 
-module.exports={
+module.exports = {
     generateJson
 };
