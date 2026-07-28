@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const LearningVerification = require("../models/learningVerification.model");
 const {
-    generateQuestionExplanation: generateLearningResourcesAI,
+    getLearningResources: generateLearningResourcesAI,
 } = require("../utils/ai/question.ai");
 
 const Paper = require("../models/paper.model");
@@ -20,7 +20,7 @@ const {
 
 const {
     getGenerateQuestion,
-    generateQuestionExplanation: generateLearningResourcesAI,
+    getLearningResources: generateLearningResourcesAI,
 } = require("../utils/question.ai");
 
 const { generateOTP } = require("../utils/generate.otp");
@@ -345,14 +345,7 @@ exports.getLearningResources = async (req, res) => {
         // Search Resources
         //------------------------------------------------
 
-        const videos = await searchYoutubeResources(
-            youtubeSearch
-        );
-
-        const pdfs = await searchPdfResources(
-            pdfSearch
-        );
-
+      
         //------------------------------------------------
         // Cache
         //------------------------------------------------
@@ -840,7 +833,7 @@ exports.questionAnswer = async (req, res) => {
   } */
 };
 
-exports.generateQuestionExplanation = async (req, res) => {
+exports.getLearningResources = async (req, res) => {
   try {
     const { questionId } = req.params;
     const { questionNumber } = req.query;
@@ -910,7 +903,7 @@ exports.generateQuestionExplanation = async (req, res) => {
 
         if (numbersToGenerate.length > 0) {
           setImmediate(() => {
-            generateExplanationsSequentially(paper, numbersToGenerate);
+            generateLearningResourcesSequentially(paper, numbersToGenerate);
           });
         }
       }
@@ -946,7 +939,7 @@ exports.generateQuestionExplanation = async (req, res) => {
 
         if (paper.isExplanationGenerated) {
           setImmediate(() => {
-            generateExplanationsSequentially(paper, [questionNum]);
+            generateLearningResourcesSequentially(paper, [questionNum]);
           });
         }
 
