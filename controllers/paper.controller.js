@@ -307,18 +307,28 @@ exports.getLearningResources = async (req, res) => {
             const paper = await Paper.findById(learning.paper)
     .select("className class syllabus language");
 
-className:
-    paper?.className ||
-    paper?.class ||
-    "",
+const {
 
-syllabus:
-    paper?.syllabus || "",
+    youtubeSearch,
 
-language:
-    paper?.language || "English",
+    pdfSearch,
 
-        });
+} = buildSearchQueries({
+
+    topic: learning.topic,
+
+    className:
+        paper?.className ||
+        paper?.class ||
+        "",
+
+    syllabus:
+        paper?.syllabus || "",
+
+    language:
+        paper?.language || "English",
+
+});
 
        //------------------------------------------------
 // Search Resources
