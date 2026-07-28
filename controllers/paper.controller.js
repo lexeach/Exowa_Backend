@@ -212,7 +212,11 @@ const generateLearningResourcesSequentially = async (
         return;
 
     }
+console.log("========== GEMINI RESPONSE ==========");
+console.dir(aiResponse, { depth: null });
+console.log("=====================================");
 
+	
     //---------------------------------------------------
     // Create Fast Lookup Map
     //---------------------------------------------------
