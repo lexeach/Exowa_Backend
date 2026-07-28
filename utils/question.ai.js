@@ -331,6 +331,10 @@ const generateVerificationQuestions = async ({
 }
 module.exports = {
     getGenerateQuestion,
+
+    // Single & Bulk Learning Resources
     generateQuestionExplanation: generateLearningResources,
+    generateBulkLearningResources: generateLearningResources,
+
     generateVerificationQuestions,
 };
