@@ -45,27 +45,52 @@ const getGenerateQuestion = async ({
         setTimeout(() => reject(new Error("Request timeout")), ms)
       );
 
-     const parsedQuestions = await Promise.race([
+     const aiResponse = await Promise.race([
     ai.generateJson(prompt),
     timeoutPromise(30000)
 ]);
-      
-      const isValidQuestion = (question) => {
-        return (
-          typeof question.questionNumber === "number" &&
-          typeof question.question === "string" &&
-          question.question.trim().length > 0 &&
-          typeof question.choices === "object" &&
-          ["A", "B", "C", "D", "E"].every(key => 
-            key in question.choices && 
+
+console.log("========== QUESTION AI RESPONSE ==========");
+console.dir(aiResponse, { depth: null });
+console.log("=========================================");
+
+// Normalize response
+let parsedQuestions = aiResponse;
+
+if (
+    !Array.isArray(parsedQuestions) &&
+    Array.isArray(parsedQuestions.questions)
+) {
+    parsedQuestions = parsedQuestions.questions;
+}
+
+if (!Array.isArray(parsedQuestions)) {
+    throw new Error(
+        "Invalid question response received from AI."
+    );
+}
+
+const isValidQuestion = (question) => {
+
+    return (
+
+        typeof question.questionNumber === "number" &&
+        typeof question.question === "string" &&
+        question.question.trim().length > 0 &&
+        typeof question.choices === "object" &&
+        ["A", "B", "C", "D", "E"].every(key =>
+            key in question.choices &&
             typeof question.choices[key] === "string" &&
             question.choices[key].trim().length > 0
-          ) &&
-          ["A", "B", "C", "D", "E"].includes(question.correctAnswer)
-        );
-      };
+        ) &&
+        ["A", "B", "C", "D", "E"].includes(question.correctAnswer)
 
-      const validatedQuestions = parsedQuestions.filter(isValidQuestion);
+    );
+
+};
+
+const validatedQuestions =
+    parsedQuestions.filter(isValidQuestion);
       
       if (validatedQuestions.length === 0) {
         throw new Error("No valid questions generated");
@@ -133,14 +158,48 @@ const generateLearningResources = async (questionData) => {
     // Build Prompt
     //--------------------------------------------------
 
-    const prompt = buildExplanationPrompt({
+    console.log("\n========================================");
+console.log("LEARNING RESOURCE REQUEST");
+console.log("========================================");
+console.log("Mode :", specificQuestion ? "Single" : "Bulk");
+console.log("Class :", questionData.className);
+console.log("Subject :", questionData.subject);
+console.log("Board :", questionData.syllabus);
+console.log("Chapter :", questionData.chapter_from);
+console.log("Language :", questionData.language);
 
-        questionData,
+if (specificQuestion) {
 
-        specificQuestion
+    console.log(
+        "Question Number :",
+        questionData.questionNumber
+    );
 
-    });
+} else {
 
+    console.log(
+        "Questions Count :",
+        questionData.questions?.length || 0
+    );
+
+    console.log(
+        "Question Numbers :",
+        questionData.questions?.map(q => q.questionNumber)
+    );
+
+}
+
+const prompt = buildExplanationPrompt({
+
+    questionData,
+
+    specificQuestion
+
+});
+
+console.log("\n========== LEARNING PROMPT ==========");
+console.log(prompt);
+console.log("=====================================\n");
     //--------------------------------------------------
     // Retry
     //--------------------------------------------------
@@ -170,14 +229,14 @@ const generateLearningResources = async (questionData) => {
                 );
 
             const parsedResponse =
-                await Promise.race([
+    await Promise.race([
+        ai.generateJson(prompt),
+        timeoutPromise(30000)
+    ]);
 
-                    ai.generateJson(prompt),
-
-                    timeoutPromise(30000)
-
-                ]);
-
+console.log("\n========== LEARNING AI RESPONSE ==========");
+console.dir(parsedResponse, { depth: null });
+console.log("==========================================\n");
             //--------------------------------------------------
             // Validation
             //--------------------------------------------------
@@ -212,7 +271,15 @@ if (
             //--------------------------------------------------
 
             if (
+               console.log(
+    "Learning Response Type :",
+    typeof parsedResponse
+);
 
+console.log(
+    "Questions Array Exists :",
+    Array.isArray(parsedResponse.questions)
+);
                 !Array.isArray(parsedResponse.questions)
 
             ) {
@@ -226,6 +293,35 @@ if (
             }
 
        if (
+           console.log(
+    "\nLearning Response Validation Started..."
+);
+
+parsedResponse.questions.forEach(q => {
+
+    console.log({
+
+        questionNumber:
+            q.questionNumber,
+
+        topic:
+            q.topic,
+
+        learningObjective:
+            q.learningObjective,
+
+        keywords:
+            q.keywords,
+
+        youtubeSearch:
+            q.youtubeSearch,
+
+        pdfSearch:
+            q.pdfSearch
+
+    });
+
+});
     parsedResponse.questions.some(
         question =>
             !question.questionNumber ||
@@ -300,11 +396,24 @@ const generateVerificationQuestions = async ({
 
    
 
-    const prompt = buildVerificationPrompt({
+   console.log("\n==================================");
+console.log("VERIFICATION STARTED");
+console.log("==================================");
+console.log("Language :", language);
+
+console.log(
+    "Explanation Length :",
+    explanation?.length || 0
+);
+
+const prompt = buildVerificationPrompt({
     explanation,
     language
 });
 
+console.log("\n========== VERIFICATION PROMPT ==========");
+console.log(prompt);
+console.log("=========================================\n");
     while(retryCount < MAX_RETRIES){
 
         try{
@@ -313,10 +422,26 @@ const generateVerificationQuestions = async ({
                 setTimeout(()=>reject(new Error("Timeout")),ms)
             );
 
-            return await Promise.race([
-    ai.generateJson(prompt),
-    timeoutPromise(30000)
-]);
+           const verificationResponse =
+    await Promise.race([
+        ai.generateJson(prompt),
+        timeoutPromise(30000)
+    ]);
+
+console.log(
+    "\n========== VERIFICATION RESPONSE =========="
+);
+
+console.dir(
+    verificationResponse,
+    { depth: null }
+);
+
+console.log(
+    "===========================================\n"
+);
+
+return verificationResponse;
 
         }
         catch(error){
