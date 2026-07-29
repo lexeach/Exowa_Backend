@@ -17,15 +17,16 @@ const GOOGLE_SEARCH_ENGINE_ID =
 //=====================================================
 
 const searchYoutubeResources = async (
-    if (!YOUTUBE_API_KEY) {
-
-    console.error("YOUTUBE_API_KEY missing.");
-
-    return [];
-
-}
     searchQueries = []
 ) => {
+
+    if (!YOUTUBE_API_KEY) {
+
+        console.error("YOUTUBE_API_KEY missing.");
+
+        return [];
+
+    }
 
     const videos = [];
 
@@ -136,21 +137,22 @@ videos.push({
 //=====================================================
 
 const searchPdfResources = async (
-    if (
-
-    !GOOGLE_SEARCH_API_KEY ||
-
-    !GOOGLE_SEARCH_ENGINE_ID
-
-) {
-
-    console.error("Google Search API configuration missing.");
-
-    return [];
-
-}
     searchQueries = []
 ) => {
+
+    if (
+
+        !GOOGLE_SEARCH_API_KEY ||
+
+        !GOOGLE_SEARCH_ENGINE_ID
+
+    ) {
+
+        console.error("Google Search API configuration missing.");
+
+        return [];
+
+    }
 
     const pdfs = [];
 
