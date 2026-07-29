@@ -187,38 +187,61 @@ Rules
 };
 
 const buildVerificationPrompt = ({
-    explanation,
+    originalQuestion,
+    topic,
+    learningObjective,
     language
 }) => {
-
     return `
 You are an expert teacher.
 
-Below is the learning explanation.
-
-${explanation}
-
 Generate EXACTLY 3 NEW multiple-choice questions.
+
+The student has already studied the topic using YouTube videos and PDF notes.
+
+Use the following learning metadata.
+
+Topic:
+${topic}
+
+Learning Objective:
+${learningObjective}
+
+Original Question:
+${originalQuestion?.question}
+
+Original Choices:
+${JSON.stringify(originalQuestion?.choices, null, 2)}
+
+Correct Answer:
+${originalQuestion?.correctAnswer}
 
 Rules
 
-- Questions must NOT copy the original question.
-- Questions must test the same concept.
-- Difficulty should be similar.
-- Return ONLY JSON.
+1. Generate EXACTLY 3 NEW MCQs.
+2. Do NOT copy the original question.
+3. Test the SAME concept.
+4. Difficulty should be similar.
+5. Every question must have options A, B, C, D and E.
+6. Option E must be "I don't know" translated into ${language}.
+7. Correct answer must be A/B/C/D/E.
+8. Return ONLY valid JSON.
+9. Do NOT return markdown.
+10. Do NOT return explanation.
 
 [
-    {
-        "questionNumber":1,
-        "question":"Question text",
-        "choices":{
-            "A":"Option A",
-            "B":"Option B",
-            "C":"Option C",
-            "D":"Option D"
-        },
-        "correctAnswer":"A"
-    }
+  {
+    "questionNumber":1,
+    "question":"Question text",
+    "choices":{
+      "A":"Option A",
+      "B":"Option B",
+      "C":"Option C",
+      "D":"Option D",
+      "E":"I don't know"
+    },
+    "correctAnswer":"A"
+  }
 ]
 
 Language: ${language}
