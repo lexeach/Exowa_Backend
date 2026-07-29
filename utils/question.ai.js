@@ -282,8 +282,7 @@ if (
             // Whole Paper
             //--------------------------------------------------
 
-            if (
-               console.log(
+           console.log(
     "Learning Response Type :",
     typeof parsedResponse
 );
@@ -292,9 +291,13 @@ console.log(
     "Questions Array Exists :",
     Array.isArray(parsedResponse.questions)
 );
-                !Array.isArray(parsedResponse.questions)
 
-            ) {
+if (
+
+    !Array.isArray(parsedResponse.questions)
+
+)
+{
 
                 throw new Error(
 
@@ -304,8 +307,7 @@ console.log(
 
             }
 
-       if (
-           console.log(
+       console.log(
     "\nLearning Response Validation Started..."
 );
 
@@ -313,27 +315,19 @@ parsedResponse.questions.forEach(q => {
 
     console.log({
 
-        questionNumber:
-            q.questionNumber,
-
-        topic:
-            q.topic,
-
-        learningObjective:
-            q.learningObjective,
-
-        keywords:
-            q.keywords,
-
-        youtubeSearch:
-            q.youtubeSearch,
-
-        pdfSearch:
-            q.pdfSearch
+        questionNumber: q.questionNumber,
+        topic: q.topic,
+        learningObjective: q.learningObjective,
+        keywords: q.keywords,
+        youtubeSearch: q.youtubeSearch,
+        pdfSearch: q.pdfSearch
 
     });
 
 });
+
+if (
+
     parsedResponse.questions.some(
         question =>
             !question.questionNumber ||
@@ -343,7 +337,9 @@ parsedResponse.questions.forEach(q => {
             !Array.isArray(question.youtubeSearch) ||
             !Array.isArray(question.pdfSearch)
     )
-) {
+
+) 
+{
 
     throw new Error(
         "Invalid learning resource response."
@@ -361,14 +357,14 @@ return parsedResponse;
 
             lastError = error;
             console.error("\n================================");
-console.error("VERIFICATION ERROR");
+console.error("QUESTION GENERATION ERROR");
 console.error("Attempt :", retryCount);
 console.error("Message :", error.message);
 console.error(error.stack);
 console.error("================================\n");
 
            console.error("\n====================================");
-console.error("LEARNING RESOURCE ERROR");
+console.error("QUESTION GENERATION ERROR");
 console.error("Attempt :", retryCount);
 console.error("Message :", error.message);
 console.error("Stack :");
