@@ -366,7 +366,7 @@ return parsedResponse;
             lastError = error;
             
 console.error("\n====================================");
-console.error("QUESTION GENERATION ERROR");
+console.error("LEARNING RESOURCE ERROR");
 console.error("Attempt :", retryCount);
 console.error("Message :", error.message);
 console.error("Stack :");
