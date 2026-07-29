@@ -107,6 +107,15 @@ exports.generateVerification = async (req, res) => {
 
             });
 
+        if (!Array.isArray(aiQuestions)) {
+
+    return customErrorResponse(
+        res,
+        500,
+        "AI failed to generate verification questions."
+    );
+
+}
         const questions =
             aiQuestions.map((question) => ({
 
@@ -170,8 +179,11 @@ verification.verifiedAt = null;
 
 verification.lastAttemptAt = new Date();
 
+verification.attempts += 1;
+
 verification.attemptHistory = [];
-     verification.status = "Pending";
+
+verification.status = "Pending";
     await verification.save();
 }
 
