@@ -41,6 +41,22 @@ const generateLearningResourcesSequentially = async (
 ) => {
 
     //---------------------------------------------------
+    // Request Information
+    //---------------------------------------------------
+
+    const requestId =
+        `LR-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+
+    const startTime = Date.now();
+
+    console.log("\n");
+    console.log("============================================================");
+    console.log("LEARNING RESOURCE GENERATION STARTED");
+    console.log("============================================================");
+    console.log("Request ID :", requestId);
+    console.log("Started At :", new Date().toISOString());
+
+    //---------------------------------------------------
     // Normalize Paper
     //---------------------------------------------------
 
@@ -50,50 +66,88 @@ const generateLearningResourcesSequentially = async (
             : paperData;
 
     if (!paper) {
-        console.error("Invalid paper.");
+
+        console.error("Invalid paper received.");
+        console.error("Request ID :", requestId);
+
         return;
+
     }
+
+    console.log("Paper ID :", paper._id?.toString());
+    console.log("Author :", paper.author || paper.authorId);
+    console.log("Subject :", paper.subject);
+    console.log("Class :", paper.className || paper.class);
+    console.log("Language :", paper.language);
+    console.log("Chapter :", paper.chapter_from);
+
+    //---------------------------------------------------
+    // Incoming Questions
+    //---------------------------------------------------
+
+    console.log("\nIncoming Wrong Question Numbers:");
+    console.dir(questionNumbers, { depth: null });
 
     //---------------------------------------------------
     // Unique Question Numbers
     //---------------------------------------------------
 
     const uniqueQuestionNumbers = [
+
         ...new Set(
+
             questionNumbers
                 .map(Number)
                 .filter(Number.isFinite)
+
         )
+
     ];
 
+    console.log("\nUnique Wrong Questions:");
+    console.dir(uniqueQuestionNumbers, { depth: null });
+
     if (uniqueQuestionNumbers.length === 0) {
+
         console.log("No wrong questions found.");
+        console.log("Request ID :", requestId);
+
         return;
+
     }
 
     //---------------------------------------------------
-    // Collect Questions To Process
+    // Collect Pending Questions
     //---------------------------------------------------
 
     const pendingQuestions = [];
 
     for (const questionNumber of uniqueQuestionNumbers) {
 
+        console.log("\n-------------------------------------");
+        console.log("Checking Question :", questionNumber);
+
         const originalQuestion =
             paper.questions.find(
+
                 q =>
+
                     Number(q.questionNumber) ===
                     Number(questionNumber)
+
             );
 
         if (!originalQuestion) {
 
-            console.log(
-                `Question ${questionNumber} not found.`
+            console.warn(
+                `Question ${questionNumber} not found in paper.`
             );
 
             continue;
+
         }
+
+        console.log("Question Found");
 
         const alreadyExists =
             await LearningVerification.findOne({
@@ -111,7 +165,10 @@ const generateLearningResourcesSequentially = async (
             );
 
             continue;
+
         }
+
+        console.log("Queued for AI Generation");
 
         pendingQuestions.push({
 
@@ -123,15 +180,41 @@ const generateLearningResourcesSequentially = async (
 
     }
 
+    console.log("\n=================================================");
+    console.log("Pending Questions Count :", pendingQuestions.length);
+    console.log(
+        "Pending Question Numbers :",
+        pendingQuestions.map(q => q.questionNumber)
+    );
+    console.log("=================================================\n");
+
     if (pendingQuestions.length === 0) {
 
         console.log(
             "No new learning resources to generate."
         );
 
+        console.log("Request ID :", requestId);
+
         return;
 
     }
+
+    //---------------------------------------------------
+    // Prepare AI Input
+    //---------------------------------------------------
+
+    const questionsForAI =
+        pendingQuestions.map(
+            item => item.originalQuestion
+        );
+
+    console.log("Preparing AI Payload...");
+    console.log("Questions Sent To AI :", questionsForAI.length);
+
+    console.log("\n========== AI PAYLOAD ==========");
+    console.dir(questionsForAI, { depth: null });
+    console.log("================================\n");
 
     //---------------------------------------------------
     // Prepare Gemini Input
@@ -142,136 +225,294 @@ const generateLearningResourcesSequentially = async (
             item => item.originalQuestion
         );
 
-    //---------------------------------------------------
-    // Single Gemini Call
-    //---------------------------------------------------
+    //---------------------------------------------------//---------------------------------------------------
+// AI Call
+//---------------------------------------------------
 
-    let aiResponse;
+let aiResponse;
 
-    try {
+const aiStartTime = Date.now();
 
-        aiResponse =
-            await generateLearningResourcesAI({
+console.log("\n=================================================");
+console.log("AI REQUEST STARTED");
+console.log("=================================================");
+console.log("Request ID :", requestId);
+console.log("Questions :", questionsForAI.length);
 
-                className:
-                    paper.className ||
-                    paper.class,
+try {
 
-                subject:
-                    paper.subject,
+    aiResponse =
+        await generateLearningResourcesAI({
 
-                syllabus:
-                    paper.syllabus,
+            className:
+                paper.className ||
+                paper.class,
 
-                chapter_from:
-                    paper.chapter_from,
+            subject:
+                paper.subject,
 
-                language:
-                    paper.language,
+            syllabus:
+                paper.syllabus,
 
-                questions:
-                    questionsForAI,
+            chapter_from:
+                paper.chapter_from,
 
-            });
+            language:
+                paper.language,
 
-    } catch (error) {
+            questions:
+                questionsForAI,
 
-        console.error(
-            "Bulk Learning AI Error:",
-            error.message
-        );
+        });
 
-        return;
+    const aiTime =
+        Date.now() - aiStartTime;
 
-    }
+    console.log("\n=================================================");
+    console.log("AI RESPONSE RECEIVED");
+    console.log("=================================================");
+    console.log("Request ID :", requestId);
+    console.log("Execution Time :", aiTime + " ms");
 
-	console.log("========== GEMINI RESPONSE ==========");
-console.dir(aiResponse, { depth: null });
-console.log("=====================================");
+} catch (error) {
 
-    //---------------------------------------------------
-    // Validate Response
-    //---------------------------------------------------
+    console.error("\n=================================================");
+    console.error("AI REQUEST FAILED");
+    console.error("=================================================");
+    console.error("Request ID :", requestId);
+    console.error("Message :", error.message);
 
-    if (
-        !aiResponse ||
-        typeof aiResponse !== "object" ||
-        !Array.isArray(aiResponse.questions)
-    ) {
+    if (error.code) {
 
-        console.error(
-            "Invalid bulk AI response."
-        );
-
-        return;
+        console.error("Code :", error.code);
 
     }
 
-    if (aiResponse.questions.length === 0) {
+    if (error.status) {
 
-        console.error(
-            "Gemini returned empty learning resources."
-        );
-
-        return;
+        console.error("Status :", error.status);
 
     }
+
+    console.error(error.stack);
+
+    console.error("=================================================\n");
+
+    return;
+
+}
+
+console.log("\n================ AI RAW RESPONSE ================");
+
+console.dir(aiResponse, {
+
+    depth: null,
+    colors: true
+
+});
+
+console.log("=================================================\n");
+
+//---------------------------------------------------
+// Validate Response
+//---------------------------------------------------
+
+console.log("Validating AI Response...");
+
+if (!aiResponse) {
+
+    console.error("AI Response is NULL");
+    console.error("Request ID :", requestId);
+
+    return;
+
+}
+
+if (typeof aiResponse !== "object") {
+
+    console.error("AI Response is not an object");
+    console.error("Actual Type :", typeof aiResponse);
+
+    return;
+
+}
+
+console.log("Response Type :", typeof aiResponse);
+
+console.log("Response Keys :");
+
+console.dir(
+
+    Object.keys(aiResponse),
+
+    { depth: null }
+
+);
+
+if (!Array.isArray(aiResponse.questions)) {
+
+    console.error("\nquestions[] not found.");
+
+    console.error("Received Object:");
+
+    console.dir(
+
+        aiResponse,
+
+        { depth: null }
+
+    );
+
+    return;
+
+}
+
+console.log(
+
+    "Learning Resources Returned :",
+
+    aiResponse.questions.length
+
+);
+
+if (aiResponse.questions.length === 0) {
+
+    console.error(
+
+        "AI returned empty questions array."
+
+    );
+
+    return;
+
+}
+
+console.log("\nReturned Question Numbers:");
+
+console.log(
+
+    aiResponse.questions.map(
+
+        item => item.questionNumber
+
+    )
+
+);
+
+console.log("AI Response Validation : SUCCESS\n");
 
 	
     //---------------------------------------------------
     // Create Fast Lookup Map
     //---------------------------------------------------
 
-    const aiMap = new Map();
+   //---------------------------------------------------
+// Create Fast Lookup Map
+//---------------------------------------------------
 
-    for (const item of aiResponse.questions) {
+console.log("\n=================================================");
+console.log("CREATING AI LOOKUP MAP");
+console.log("=================================================");
 
-        if (
-            item &&
-            item.questionNumber !== undefined
-        ) {
+const aiMap = new Map();
 
-            aiMap.set(
-                Number(item.questionNumber),
-                item
-            );
+for (const item of aiResponse.questions) {
 
-        }
+    if (
+        item &&
+        item.questionNumber !== undefined
+    ) {
+
+        aiMap.set(
+            Number(item.questionNumber),
+            item
+        );
+
+        console.log(
+            `Mapped AI Question -> ${item.questionNumber}`
+        );
 
     }
 
-    //---------------------------------------------------
-    // Save Learning Resources
-    //---------------------------------------------------
+}
 
-    for (const pending of pendingQuestions) {
+console.log(
+    "Total AI Records :",
+    aiMap.size
+);
 
-        try {
+//---------------------------------------------------
+// Save Learning Resources
+//---------------------------------------------------
 
-            const {
+let successCount = 0;
+let failedCount = 0;
 
-                questionNumber,
+console.log("\n=================================================");
+console.log("STARTING DATABASE SAVE");
+console.log("=================================================");
 
-                originalQuestion,
+for (const pending of pendingQuestions) {
 
-            } = pending;
+    try {
 
-            const aiItem =
-                aiMap.get(
-                    Number(questionNumber)
-                );
+        const {
 
-            if (!aiItem) {
+            questionNumber,
 
-                console.log(
-                    `No AI response found for Question ${questionNumber}`
-                );
+            originalQuestion,
 
-                continue;
+        } = pending;
 
-            }
+        console.log("\n----------------------------------------");
+        console.log("Saving Question :", questionNumber);
 
+        const aiItem =
+            aiMap.get(
+                Number(questionNumber)
+            );
 
+        if (!aiItem) {
+
+            console.warn(
+                `AI response missing for Question ${questionNumber}`
+            );
+
+            failedCount++;
+
+            continue;
+
+        }
+
+        console.log("Topic :", aiItem.topic);
+
+        console.log(
+            "Learning Objective :",
+            aiItem.learningObjective
+        );
+
+        console.log(
+            "Keywords :",
+            Array.isArray(aiItem.keywords)
+                ? aiItem.keywords.length
+                : 0
+        );
+
+        console.log(
+            "Youtube Queries :",
+            Array.isArray(aiItem.youtubeSearch)
+                ? aiItem.youtubeSearch.length
+                : 0
+        );
+
+        console.log(
+            "PDF Queries :",
+            Array.isArray(aiItem.pdfSearch)
+                ? aiItem.pdfSearch.length
+                : 0
+        );
+
+        const learningDoc =
             await LearningVerification.create({
 
                 paper: paper._id,
@@ -323,36 +564,167 @@ console.log("=====================================");
 
             });
 
-            console.log(
-                `Learning resources generated for Question ${questionNumber}`
-            );
+        successCount++;
 
-        }
+        console.log(
+            "Mongo Save : SUCCESS"
+        );
 
-        catch (error) {
-
-            console.error(
-
-                `Learning Resource Error (Question ${pending.questionNumber})`,
-
-                error.message
-
-            );
-
-        }
+        console.log(
+            "LearningVerification ID :",
+            learningDoc._id.toString()
+        );
 
     }
+
+    catch (error) {
+
+        failedCount++;
+
+        console.error("\n========================================");
+
+        console.error(
+            `DATABASE SAVE FAILED (Question ${pending.questionNumber})`
+        );
+
+        console.error(
+            "Request ID :",
+            requestId
+        );
+
+        console.error(
+            "Paper ID :",
+            paper._id.toString()
+        );
+
+        console.error(
+            "Message :",
+            error.message
+        );
+
+        console.error(
+            error.stack
+        );
+
+        console.error(
+            "========================================\n"
+        );
+
+    }
+
+}
 
     //---------------------------------------------------
     // Finished
     //---------------------------------------------------
 
-    console.log(
+   //---------------------------------------------------
+// Finished
+//---------------------------------------------------
 
-        `Successfully generated learning resources for ${pendingQuestions.length} question(s).`
+const totalExecutionTime =
+    Date.now() - startTime;
 
-    );
+console.log("\n");
+console.log("============================================================");
+console.log("LEARNING RESOURCE GENERATION COMPLETED");
+console.log("============================================================");
 
+console.log("Request ID :", requestId);
+
+console.log(
+    "Paper ID :",
+    paper._id?.toString()
+);
+
+console.log(
+    "Total Wrong Questions :",
+    uniqueQuestionNumbers.length
+);
+
+console.log(
+    "Questions Sent To AI :",
+    questionsForAI.length
+);
+
+console.log(
+    "Learning Records Created :",
+    successCount
+);
+
+console.log(
+    "Learning Records Failed :",
+    failedCount
+);
+
+console.log(
+    "Execution Time :",
+    `${totalExecutionTime} ms`
+);
+
+console.log(
+    "Completed At :",
+    new Date().toISOString()
+);
+
+console.log(
+    "Node Version :",
+    process.version
+);
+
+const memory =
+    process.memoryUsage();
+
+console.log("\nMemory Usage");
+
+console.log(
+    "RSS :",
+    `${(memory.rss / 1024 / 1024).toFixed(2)} MB`
+);
+
+console.log(
+    "Heap Total :",
+    `${(memory.heapTotal / 1024 / 1024).toFixed(2)} MB`
+);
+
+console.log(
+    "Heap Used :",
+    `${(memory.heapUsed / 1024 / 1024).toFixed(2)} MB`
+);
+
+console.log(
+    "External :",
+    `${(memory.external / 1024 / 1024).toFixed(2)} MB`
+);
+
+console.log("\nSummary");
+
+console.table({
+
+    requestId,
+
+    paperId:
+        paper._id?.toString(),
+
+    aiQuestions:
+        questionsForAI.length,
+
+    created:
+        successCount,
+
+    failed:
+        failedCount,
+
+    executionTime:
+        `${totalExecutionTime} ms`
+
+});
+
+console.log("============================================================");
+console.log("END OF LEARNING RESOURCE GENERATION");
+console.log("============================================================\n");
+
+};
 };
 
 
@@ -862,81 +1234,310 @@ exports.deletePaper = async (req, res) => {
 // answer the question
 exports.questionAnswer = async (req, res) => {
 
-  //try {
-    // Extract query and body parameters
-    const { questionId, answers, userId, questionNumber } = req.body;
-    // Validate if the paper exists
-    const paper = await Paper.findById(questionId);
+    const requestId =
+        `QA-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
-    if (!paper) return customErrorResponse(res, 400, "Invalid Paper");
-    // Validate if the user exists
-    const parent = true;;
+    const startTime = Date.now();
 
-    // Update the paper's answers and reset the OTP
-    const updatedPaper = await Paper.findByIdAndUpdate(
-      questionId,
-      {
-        answers,
-        otp: null,
-        // children: userId,
-        // childrenId: userId,
-        isLearningResourceGenerated: false,
-      },
-      { new: true }
-    );
+    console.log("\n============================================================");
+    console.log("QUESTION ANSWER REQUEST STARTED");
+    console.log("============================================================");
+    console.log("Request ID :", requestId);
+    console.log("Time :", new Date().toISOString());
 
-    if (!updatedPaper) {
-      return successResponse(res, 404, "Paper not found");
+    try {
+
+        //---------------------------------------------------
+        // Request
+        //---------------------------------------------------
+
+        const {
+
+            questionId,
+            answers,
+            userId,
+            questionNumber
+
+        } = req.body;
+
+        console.log("Question ID :", questionId);
+        console.log("User ID :", userId);
+        console.log("Answer Count :", Array.isArray(answers) ? answers.length : 0);
+
+        console.log("\n========== ANSWERS RECEIVED ==========");
+        console.dir(answers, { depth: null });
+        console.log("======================================");
+
+        //---------------------------------------------------
+        // Load Paper
+        //---------------------------------------------------
+
+        const paper =
+            await Paper.findById(questionId);
+
+        if (!paper) {
+
+            console.error("Paper not found.");
+            console.error("Request ID :", requestId);
+
+            return customErrorResponse(
+                res,
+                400,
+                "Invalid Paper"
+            );
+
+        }
+
+        console.log("Paper Loaded Successfully");
+        console.log("Paper ID :", paper._id.toString());
+        console.log("Subject :", paper.subject);
+        console.log("Class :", paper.className || paper.class);
+
+        //---------------------------------------------------
+        // Save Answers
+        //---------------------------------------------------
+
+        console.log("\nSaving Student Answers...");
+
+        const updatedPaper =
+            await Paper.findByIdAndUpdate(
+
+                questionId,
+
+                {
+
+                    answers,
+
+                    otp: null,
+
+                    isLearningResourceGenerated: false,
+
+                },
+
+                {
+
+                    new: true
+
+                }
+
+            );
+
+        if (!updatedPaper) {
+
+            console.error("Paper update failed.");
+
+            return successResponse(
+                res,
+                404,
+                "Paper not found"
+            );
+
+        }
+
+        console.log("Answers Saved Successfully");
+
+        //---------------------------------------------------
+        // Prepare Response
+        //---------------------------------------------------
+
+        const responsePayload =
+
+            updatedPaper?.toObject
+
+                ? updatedPaper.toObject()
+
+                : updatedPaper;
+
+        //---------------------------------------------------
+        // Detect Wrong Answers
+        //---------------------------------------------------
+
+        console.log("\nChecking Wrong Answers...");
+
+        const questionNumbers =
+
+            Array.isArray(answers)
+
+                ? answers
+
+                    .filter(answer => {
+
+                        const question =
+
+                            responsePayload.questions.find(
+
+                                q =>
+
+                                    Number(q.questionNumber) ===
+                                    Number(answer.questionNumber)
+
+                            );
+
+                        if (!question) {
+
+                            console.warn(
+                                `Question ${answer.questionNumber} missing in paper`
+                            );
+
+                            return false;
+
+                        }
+
+                        const isWrong =
+                            question.correctAnswer !== answer.option;
+
+                        console.log(
+
+                            `Q${answer.questionNumber}`,
+
+                            "| Selected :", answer.option,
+
+                            "| Correct :", question.correctAnswer,
+
+                            "|",
+
+                            isWrong ? "WRONG" : "CORRECT"
+
+                        );
+
+                        return isWrong;
+
+                    })
+
+                    .map(
+
+                        answer => answer.questionNumber
+
+                    )
+
+                : [];
+
+        //---------------------------------------------------
+        // Manual Question
+        //---------------------------------------------------
+
+        if (
+
+            questionNumber &&
+
+            !questionNumbers.includes(questionNumber)
+
+        ) {
+
+            questionNumbers.push(questionNumber);
+
+        }
+
+        console.log("\nWrong Questions :");
+
+        console.dir(
+
+            questionNumbers,
+
+            {
+
+                depth: null
+
+            }
+
+        );
+
+        //---------------------------------------------------
+        // Background Learning
+        //---------------------------------------------------
+
+        if (
+
+            questionNumbers.length > 0
+
+        ) {
+
+            console.log("\nLearning Resource Generation Triggered");
+
+            setImmediate(() => {
+
+                console.log(
+                    "Background Learning Started..."
+                );
+
+                generateLearningResourcesSequentially(
+
+                    responsePayload,
+
+                    questionNumbers
+
+                );
+
+            });
+
+        } else {
+
+            console.log(
+                "No wrong answers. Learning generation skipped."
+            );
+
+        }
+
+        //---------------------------------------------------
+        // Response
+        //---------------------------------------------------
+
+        const executionTime =
+            Date.now() - startTime;
+
+        console.log("\n============================================================");
+        console.log("QUESTION ANSWER REQUEST COMPLETED");
+        console.log("============================================================");
+        console.log("Request ID :", requestId);
+        console.log("Wrong Answers :", questionNumbers.length);
+        console.log("Execution Time :", executionTime + " ms");
+        console.log("============================================================\n");
+
+        return successResponse(
+
+            res,
+
+            201,
+
+            "Paper updated successfully",
+
+            responsePayload
+
+        );
+
     }
 
-    const responsePayload =
-      updatedPaper?.toObject ? updatedPaper.toObject() : updatedPaper;
+    catch (error) {
 
-    const questionNumbers = Array.isArray(answers)
-    ? answers
-          .filter(answer => {
+        console.error("\n============================================================");
+        console.error("QUESTION ANSWER ERROR");
+        console.error("============================================================");
 
-              const question =
-                  responsePayload.questions.find(
-                      q =>
-                          Number(q.questionNumber) ===
-                          Number(answer.questionNumber)
-                  );
+        console.error("Request ID :", requestId);
 
-              return (
-                  question &&
-                  question.correctAnswer !== answer.option
-              );
+        console.error(
 
-          })
-          .map(answer => answer.questionNumber)
-    : [];
+            "Message :",
 
-    if (questionNumber && !questionNumbers.includes(questionNumber)) {
-      questionNumbers.push(questionNumber);
+            error.message
+
+        );
+
+        console.error(error.stack);
+
+        console.error("============================================================\n");
+
+        return errorResponse(
+
+            res,
+
+            error
+
+        );
+
     }
 
-    if (questionNumbers.length > 0) {
-      setImmediate(() => {
-    generateLearningResourcesSequentially(
-        responsePayload,
-        questionNumbers
-    );
-});
-    }
-
-    return successResponse(
-      res,
-      201,
-      "Paper updated successfully ",
-      responsePayload
-    );
-  /*} catch (error) {
-	  console.log(error);
-    return errorResponse(res, error);
-  } */
 };
-
 
 exports.getChildrenLogin = async (req, res) => {
   try {
