@@ -155,14 +155,23 @@ exports.generateVerification = async (req, res) => {
 
     // Only regenerate if still pending
     verification.questions = questions;
-    verification.learningContent = explanation.explanation;
-    verification.score = 0;
-    verification.scorePercentage = 0;
-    verification.submittedAt = null;
-    verification.verifiedAt = null;
-    verification.lastAttemptAt = new Date();
-    verification.attempts += 1;
 
+verification.learningContent = explanation.explanation;
+
+verification.totalQuestions = questions.length;
+
+verification.score = 0;
+
+verification.scorePercentage = 0;
+
+verification.submittedAt = null;
+
+verification.verifiedAt = null;
+
+verification.lastAttemptAt = new Date();
+
+verification.attemptHistory = [];
+     verification.status = "Pending";
     await verification.save();
 }
 
@@ -223,7 +232,9 @@ exports.generateVerification = async (req, res) => {
 
         
 
-        console.error(error);
+        console.error("Message :", error.message);
+
+console.error(error.stack);
 
         return errorResponse(res, error);
 
@@ -341,12 +352,7 @@ exports.submitVerification = async (req, res) => {
         verification.submittedAt =
             new Date();
 
-        //--------------------------------------------------
-        // Status
-        //--------------------------------------------------
-
-       //--------------------------------------------------
-// Status
+       // Status
 //--------------------------------------------------
 
 if (
@@ -364,11 +370,8 @@ if (
 
 }
 
-//--------------------------------------------------
 // Save verification FIRST
-//--------------------------------------------------
 
-//await verification.save();
 
 //--------------------------------------------------
 // Check if any pending verification exists
@@ -427,7 +430,7 @@ const pendingVerification =
                 new Date(),
 
         });
-
+        verification.status = "Pending";
         await verification.save();
 
         //--------------------------------------------------
@@ -464,7 +467,9 @@ const pendingVerification =
 
     catch (error) {
 
-        console.error(error);
+        console.error("Message :", error.message);
+
+console.error(error.stack);
 
         return errorResponse(res, error);
 
@@ -560,7 +565,9 @@ exports.getVerificationStatus = async (req, res) => {
 
     catch (error) {
 
-        console.error(error);
+       console.error("Message :", error.message);
+
+console.error(error.stack);
 
         return errorResponse(res, error);
 
