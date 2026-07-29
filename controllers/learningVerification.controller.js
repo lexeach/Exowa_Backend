@@ -377,7 +377,28 @@ if (
 // Check if any pending verification exists
 //--------------------------------------------------
 
-const pendingVerification =
+        //--------------------------------------------------
+        // Attempt History
+        //--------------------------------------------------
+
+        verification.attemptHistory.push({
+
+    attemptNo:
+        verification.attempts,
+
+    score:
+        verification.score,
+
+    scorePercentage:
+        verification.scorePercentage,
+
+    submittedAt:
+        new Date(),
+
+});
+
+await verification.save();
+        const pendingVerification =
     await LearningVerification.findOne({
 
         paper: verification.paper,
@@ -411,27 +432,7 @@ const pendingVerification =
     );
 
     }
-        //--------------------------------------------------
-        // Attempt History
-        //--------------------------------------------------
 
-        verification.attemptHistory.push({
-
-            attemptNo:
-                verification.attempts,
-
-            score:
-                verification.score,
-
-            scorePercentage:
-                verification.scorePercentage,
-
-            submittedAt:
-                new Date(),
-
-        });
-        verification.status = "Pending";
-        await verification.save();
 
         //--------------------------------------------------
 
