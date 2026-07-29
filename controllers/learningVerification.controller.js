@@ -1,5 +1,4 @@
 const Paper = require("../models/paper.model");
-const QuestionExplanation = require("../models/questionExplanation.model");
 const LearningVerification = require("../models/learningVerification.model");
 
 const {
@@ -56,57 +55,51 @@ exports.generateVerification = async (req, res) => {
         // Load Explanation
         //--------------------------------------------------
 
-        const explanationDoc =
-            await QuestionExplanation.findOne({
+       //--------------------------------------------------
+// Load Learning Resource
+//--------------------------------------------------
 
-                questionId: paperId,
+const learning =
+    await LearningVerification.findOne({
 
-                isDeleted: false,
+        paper: paperId,
 
-            });
+        questionIndex: Number(questionNumber),
 
-        if (!explanationDoc) {
+        createdBy: userId,
 
-            return customErrorResponse(
-                res,
-                404,
-                "Learning content not generated yet."
-            );
+    });
 
-        }
+if (!learning) {
 
-        const explanation =
-            explanationDoc.explanations.find(
+    return customErrorResponse(
 
-                item =>
-                    Number(item.questionNumber) ===
-                    Number(questionNumber)
+        res,
 
-            );
+        404,
 
-        if (!explanation) {
+        "Learning resource not found."
 
-            return customErrorResponse(
-                res,
-                404,
-                "Learning content not found."
-            );
+    );
 
-        }
+}
 
         //--------------------------------------------------
         // Generate Verification Questions
         //--------------------------------------------------
 
         const aiQuestions =
-            await generateVerificationQuestions({
+    await generateVerificationQuestions({
 
-                explanation: explanation.explanation,
+        originalQuestion: learning.originalQuestion,
 
-                language: paper.language,
+        topic: learning.topic,
 
-            });
+        learningObjective: learning.learningObjective,
 
+        language: paper.language,
+
+    });
         if (!Array.isArray(aiQuestions)) {
 
     return customErrorResponse(
@@ -165,7 +158,7 @@ exports.generateVerification = async (req, res) => {
     // Only regenerate if still pending
     verification.questions = questions;
 
-verification.learningContent = explanation.explanation;
+verification.learningContent = "";
 
 verification.totalQuestions = questions.length;
 
@@ -210,8 +203,7 @@ verification.status = "Pending";
 
                         ),
 
-                    learningContent:
-                        explanation.explanation,
+                    learningContent: "",
 
                     questions,
 
