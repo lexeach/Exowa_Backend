@@ -107,7 +107,19 @@ const validatedQuestions =
     } catch (error) {
       retryCount++;
       lastError = error;
-      console.error(`Error on attempt ${retryCount}: ${error.message}`);
+        console.error("\n================================");
+console.error("VERIFICATION ERROR");
+console.error("Attempt :", retryCount);
+console.error("Message :", error.message);
+console.error(error.stack);
+console.error("================================\n");
+      console.error("\n====================================");
+console.error("LEARNING RESOURCE ERROR");
+console.error("Attempt :", retryCount);
+console.error("Message :", error.message);
+console.error("Stack :");
+console.error(error.stack);
+console.error("====================================\n");
       
       if (retryCount >= MAX_RETRIES) {
         throw new Error(`Failed after ${MAX_RETRIES} attempts: ${lastError.message}`);
@@ -348,12 +360,20 @@ return parsedResponse;
             retryCount++;
 
             lastError = error;
+            console.error("\n================================");
+console.error("VERIFICATION ERROR");
+console.error("Attempt :", retryCount);
+console.error("Message :", error.message);
+console.error(error.stack);
+console.error("================================\n");
 
-            console.error(
-
-                `Error on attempt ${retryCount}: ${error.message}`
-
-            );
+           console.error("\n====================================");
+console.error("LEARNING RESOURCE ERROR");
+console.error("Attempt :", retryCount);
+console.error("Message :", error.message);
+console.error("Stack :");
+console.error(error.stack);
+console.error("====================================\n");
 
             if (retryCount >= MAX_RETRIES) {
 
@@ -448,6 +468,12 @@ return verificationResponse;
 
             retryCount++;
             lastError=error;
+            console.error("\n================================");
+console.error("VERIFICATION ERROR");
+console.error("Attempt :", retryCount);
+console.error("Message :", error.message);
+console.error(error.stack);
+console.error("================================\n");
 
             if(retryCount>=MAX_RETRIES){
                 throw lastError;
