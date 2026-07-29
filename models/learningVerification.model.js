@@ -275,29 +275,67 @@ learningVerificationSchema.post(
 
     "save",
 
-    function (doc) {
+    function (
 
-        console.log("\n====================================================");
-        console.log("LearningVerification SAVED");
-        console.log("====================================================");
+        error,
 
-        console.log("Mongo ID :", doc._id.toString());
+        doc,
 
-        console.log("Paper :", doc.paper);
+        next
 
-        console.log("Question :", doc.questionIndex);
+    ) {
 
-        console.log("Topic :", doc.topic);
+        if (error) {
 
-        console.log("Status :", doc.status);
+            console.error("\n====================================================");
+            console.error("LearningVerification SAVE ERROR");
+            console.error("====================================================");
 
-        console.log("Attempts :", doc.attempts);
+            console.error("Message :");
 
-        console.log("Created :", doc.createdAt);
+            console.error(error.message);
 
-        console.log("Updated :", doc.updatedAt);
+            if (error.code === 11000) {
 
-        console.log("====================================================\n");
+                console.error("\nDuplicate Key Error");
+
+                console.dir(
+
+                    error.keyValue,
+
+                    {
+
+                        depth: null
+
+                    }
+
+                );
+
+            }
+
+            console.error("\nDocument");
+
+            console.dir(
+
+                doc,
+
+                {
+
+                    depth: null
+
+                }
+
+            );
+
+            console.error("\nStack Trace");
+
+            console.error(error.stack);
+
+            console.error("====================================================\n");
+
+        }
+
+        next(error);
 
     }
 
