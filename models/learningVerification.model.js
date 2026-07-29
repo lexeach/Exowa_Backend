@@ -277,9 +277,9 @@ learningVerificationSchema.post(
 
     function (doc) {
 
-        console.log("\n========================================");
+        console.log("\n====================================================");
         console.log("LearningVerification SAVED");
-        console.log("========================================");
+        console.log("====================================================");
 
         console.log("Mongo ID :", doc._id.toString());
 
@@ -287,11 +287,17 @@ learningVerificationSchema.post(
 
         console.log("Question :", doc.questionIndex);
 
+        console.log("Topic :", doc.topic);
+
         console.log("Status :", doc.status);
+
+        console.log("Attempts :", doc.attempts);
 
         console.log("Created :", doc.createdAt);
 
-        console.log("========================================\n");
+        console.log("Updated :", doc.updatedAt);
+
+        console.log("====================================================\n");
 
     }
 
@@ -333,15 +339,16 @@ learningVerificationSchema.post(
     }
 
 );
+
 learningVerificationSchema.pre(
 
     "save",
 
     function (next) {
 
-        console.log("\n========================================");
+        console.log("\n====================================================");
         console.log("LearningVerification PRE SAVE");
-        console.log("========================================");
+        console.log("====================================================");
 
         console.log("Document ID :", this._id);
 
@@ -351,18 +358,35 @@ learningVerificationSchema.pre(
 
         console.log("Topic :", this.topic);
 
+        console.log("Learning Objective :", this.learningObjective);
+
         console.log("Status :", this.status);
 
         console.log("Created By :", this.createdBy);
 
-        console.log("========================================\n");
+        console.log("Is New :", this.isNew);
+
+        console.log("Modified Fields :");
+
+        console.dir(
+
+            this.modifiedPaths(),
+
+            {
+
+                depth: null
+
+            }
+
+        );
+
+        console.log("====================================================\n");
 
         next();
 
     }
 
 );
-
 
 module.exports = mongoose.model(
   "LearningVerification",
