@@ -3,35 +3,6 @@ const mongoose = require("mongoose");
 // Save Logger
 //----------------------------------------------------
 
-learningVerificationSchema.pre(
-
-    "save",
-
-    function (next) {
-
-        console.log("\n========================================");
-        console.log("LearningVerification PRE SAVE");
-        console.log("========================================");
-
-        console.log("Document ID :", this._id);
-
-        console.log("Paper :", this.paper);
-
-        console.log("Question :", this.questionIndex);
-
-        console.log("Topic :", this.topic);
-
-        console.log("Status :", this.status);
-
-        console.log("Created By :", this.createdBy);
-
-        console.log("========================================\n");
-
-        next();
-
-    }
-
-);
 
 const verificationQuestionSchema = new mongoose.Schema(
   {
@@ -362,6 +333,36 @@ learningVerificationSchema.post(
     }
 
 );
+learningVerificationSchema.pre(
+
+    "save",
+
+    function (next) {
+
+        console.log("\n========================================");
+        console.log("LearningVerification PRE SAVE");
+        console.log("========================================");
+
+        console.log("Document ID :", this._id);
+
+        console.log("Paper :", this.paper);
+
+        console.log("Question :", this.questionIndex);
+
+        console.log("Topic :", this.topic);
+
+        console.log("Status :", this.status);
+
+        console.log("Created By :", this.createdBy);
+
+        console.log("========================================\n");
+
+        next();
+
+    }
+
+);
+
 
 module.exports = mongoose.model(
   "LearningVerification",
