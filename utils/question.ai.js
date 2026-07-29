@@ -248,6 +248,19 @@ console.log("=====================================\n");
 
 console.log("\n========== LEARNING AI RESPONSE ==========");
 console.dir(parsedResponse, { depth: null });
+            console.log(
+    "AI Response Keys :",
+    Object.keys(parsedResponse)
+);
+
+if (Array.isArray(parsedResponse.questions)) {
+
+    console.log(
+        "Questions Returned :",
+        parsedResponse.questions.length
+    );
+
+}
 console.log("==========================================\n");
             //--------------------------------------------------
             // Validation
@@ -356,15 +369,11 @@ return parsedResponse;
             retryCount++;
 
             lastError = error;
-            console.error("\n================================");
-console.error("QUESTION GENERATION ERROR");
-console.error("Attempt :", retryCount);
-console.error("Message :", error.message);
-console.error(error.stack);
-console.error("================================\n");
+            
 
            console.error("\n====================================");
-console.error("QUESTION GENERATION ERROR");
+console.error("\n====================================");
+console.error("LEARNING RESOURCE ERROR");
 console.error("Attempt :", retryCount);
 console.error("Message :", error.message);
 console.error("Stack :");
