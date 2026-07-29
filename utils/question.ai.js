@@ -478,16 +478,31 @@ console.log(
     "===========================================\n"
 );
 
-if (!Array.isArray(verificationResponse)) {
+console.log("\n========== RAW VERIFICATION RESPONSE ==========");
+console.dir(verificationResponse, { depth: null });
+console.log("===============================================");
 
-    throw new Error(
-        "Invalid verification response."
-    );
-
+if (Array.isArray(verificationResponse)) {
+    return verificationResponse;
 }
 
-return verificationResponse;
+if (
+    verificationResponse &&
+    Array.isArray(verificationResponse.questions)
+) {
+    return verificationResponse.questions;
+}
 
+if (
+    verificationResponse &&
+    Array.isArray(verificationResponse.data)
+) {
+    return verificationResponse.data;
+}
+
+throw new Error(
+    `Invalid verification response: ${JSON.stringify(verificationResponse)}`
+);
         }
         catch(error){
 
