@@ -1,4 +1,37 @@
 const mongoose = require("mongoose");
+//----------------------------------------------------
+// Save Logger
+//----------------------------------------------------
+
+learningVerificationSchema.pre(
+
+    "save",
+
+    function (next) {
+
+        console.log("\n========================================");
+        console.log("LearningVerification PRE SAVE");
+        console.log("========================================");
+
+        console.log("Document ID :", this._id);
+
+        console.log("Paper :", this.paper);
+
+        console.log("Question :", this.questionIndex);
+
+        console.log("Topic :", this.topic);
+
+        console.log("Status :", this.status);
+
+        console.log("Created By :", this.createdBy);
+
+        console.log("========================================\n");
+
+        next();
+
+    }
+
+);
 
 const verificationQuestionSchema = new mongoose.Schema(
   {
@@ -235,6 +268,99 @@ pdfs: [
   {
     timestamps: true,
   }
+);
+//----------------------------------------------------
+// Indexes
+//----------------------------------------------------
+
+learningVerificationSchema.index({
+
+    paper: 1,
+
+    questionIndex: 1
+
+}, {
+
+    unique: true
+
+});
+
+learningVerificationSchema.index({
+
+    createdBy: 1
+
+});
+
+learningVerificationSchema.index({
+
+    status: 1
+
+});
+//----------------------------------------------------
+// Post Save Logger
+//----------------------------------------------------
+
+learningVerificationSchema.post(
+
+    "save",
+
+    function (doc) {
+
+        console.log("\n========================================");
+        console.log("LearningVerification SAVED");
+        console.log("========================================");
+
+        console.log("Mongo ID :", doc._id.toString());
+
+        console.log("Paper :", doc.paper);
+
+        console.log("Question :", doc.questionIndex);
+
+        console.log("Status :", doc.status);
+
+        console.log("Created :", doc.createdAt);
+
+        console.log("========================================\n");
+
+    }
+
+);
+//----------------------------------------------------
+// Error Logger
+//----------------------------------------------------
+
+learningVerificationSchema.post(
+
+    "save",
+
+    function (
+
+        error,
+
+        doc,
+
+        next
+
+    ) {
+
+        if (error) {
+
+            console.error("\n========================================");
+            console.error("LearningVerification SAVE ERROR");
+            console.error("========================================");
+
+            console.error(error.message);
+
+            console.error(error.stack);
+
+            console.error("========================================\n");
+
+        }
+
+        next(error);
+
+    }
+
 );
 
 module.exports = mongoose.model(
