@@ -717,9 +717,6 @@ console.log("END OF LEARNING RESOURCE GENERATION");
 console.log("============================================================\n");
 
 };
-};
-
-
 
 
 
