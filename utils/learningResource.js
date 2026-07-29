@@ -4,19 +4,26 @@ const axios = require("axios");
 // Configuration
 //=====================================================
 
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+const YOUTUBE_API_KEY =
+    process.env.YOUTUBE_API_KEY || "";
 
 const GOOGLE_SEARCH_API_KEY =
-    process.env.GOOGLE_SEARCH_API_KEY;
+    process.env.GOOGLE_SEARCH_API_KEY || "";
 
 const GOOGLE_SEARCH_ENGINE_ID =
-    process.env.GOOGLE_SEARCH_ENGINE_ID;
-
+    process.env.GOOGLE_SEARCH_ENGINE_ID || "";
 //=====================================================
 // Search YouTube Videos
 //=====================================================
 
 const searchYoutubeResources = async (
+    if (!YOUTUBE_API_KEY) {
+
+    console.error("YOUTUBE_API_KEY missing.");
+
+    return [];
+
+}
     searchQueries = []
 ) => {
 
@@ -66,7 +73,23 @@ const searchYoutubeResources = async (
     continue;
      }
 
-    videos.push({
+    if (
+
+    videos.some(
+
+        video =>
+
+            video.youtubeId === item.id.videoId
+
+    )
+
+) {
+
+    continue;
+
+}
+
+videos.push({
 
     youtubeId:
         item.id.videoId,
@@ -113,6 +136,19 @@ const searchYoutubeResources = async (
 //=====================================================
 
 const searchPdfResources = async (
+    if (
+
+    !GOOGLE_SEARCH_API_KEY ||
+
+    !GOOGLE_SEARCH_ENGINE_ID
+
+) {
+
+    console.error("Google Search API configuration missing.");
+
+    return [];
+
+}
     searchQueries = []
 ) => {
 
@@ -154,6 +190,22 @@ const searchPdfResources = async (
 
                if (!item?.link) {
     continue;
+}
+
+if (
+
+    pdfs.some(
+
+        pdf =>
+
+            pdf.url === item.link
+
+    )
+
+) {
+
+    continue;
+
 }
 
 pdfs.push({
