@@ -404,10 +404,11 @@ console.error("====================================\n");
 
 };
 const generateVerificationQuestions = async ({
-    explanation,
+    originalQuestion,
+    topic,
+    learningObjective,
     language
 }) => {
-
     const MAX_RETRIES = 3;
     let retryCount = 0;
     let lastError = null;
@@ -419,16 +420,28 @@ console.log("VERIFICATION STARTED");
 console.log("==================================");
 console.log("Language :", language);
 
+console.log("Topic :", topic);
+
 console.log(
-    "Explanation Length :",
-    explanation?.length || 0
+    "Learning Objective :",
+    learningObjective
 );
 
+console.log(
+    "Question :",
+    originalQuestion?.question
+);
 const prompt = buildVerificationPrompt({
-    explanation,
-    language
-});
 
+    originalQuestion,
+
+    topic,
+
+    learningObjective,
+
+    language
+
+});
 console.log("\n========== VERIFICATION PROMPT ==========");
 console.log(prompt);
 console.log("=========================================\n");
@@ -454,10 +467,24 @@ console.dir(
     verificationResponse,
     { depth: null }
 );
+            console.log(
+    "Questions Returned :",
+    Array.isArray(verificationResponse)
+        ? verificationResponse.length
+        : 0
+);
 
 console.log(
     "===========================================\n"
 );
+
+if (!Array.isArray(verificationResponse)) {
+
+    throw new Error(
+        "Invalid verification response."
+    );
+
+}
 
 return verificationResponse;
 
