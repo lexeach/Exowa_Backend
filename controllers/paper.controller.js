@@ -216,16 +216,8 @@ const generateLearningResourcesSequentially = async (
     console.dir(questionsForAI, { depth: null });
     console.log("================================\n");
 
-    //---------------------------------------------------
-    // Prepare Gemini Input
-    //---------------------------------------------------
-
-    const questionsForAI =
-        pendingQuestions.map(
-            item => item.originalQuestion
-        );
-
-    //---------------------------------------------------//---------------------------------------------------
+    
+	//---------------------------------------------------
 // AI Call
 //---------------------------------------------------
 
