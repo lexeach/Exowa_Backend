@@ -46,7 +46,10 @@ const searchYoutubeResources = async (searchQueries = []) => {
 
                     safeSearch: "strict",
 
-                    relevanceLanguage: "en"
+                    relevanceLanguage:
+    query.includes("Hindi")
+        ? "hi"
+        : "en",
 
                 }
 
