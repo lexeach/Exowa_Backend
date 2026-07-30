@@ -115,31 +115,43 @@ const searchPdfResources = async (searchQueries = []) => {
 
     const query = searchQueries[0];
 
-    return [
+try {
 
+    const response = await axios.get(
+        "https://www.googleapis.com/customsearch/v1",
         {
-
-            title: "NCERT / Educational PDF Search",
-
-            url:
-                `https://www.google.com/search?q=${encodeURIComponent(
-                    `site:.edu OR site:ncert.nic.in filetype:pdf ${query}`
-                )}`
-
-        },
-
-        {
-
-            title: "Google PDF Search",
-
-            url:
-                `https://www.google.com/search?q=${encodeURIComponent(
-                    `${query} filetype:pdf`
-                )}`
-
+            params: {
+                key: process.env.GOOGLE_SEARCH_API_KEY,
+                cx: process.env.GOOGLE_SEARCH_ENGINE_ID,
+                q: `${query} filetype:pdf`,
+                num: 5,
+            },
         }
+    );
 
-    ];
+    const items = response.data.items || [];
+
+    return items.map((item) => ({
+
+        title: item.title,
+
+        url: item.link,
+
+        source: item.displayLink,
+
+        snippet: item.snippet,
+
+    }));
+
+} catch (error) {
+
+    console.error(
+        "PDF Search Error:",
+        error.response?.data || error.message
+    );
+
+    return [];
+}
 
 };
 
