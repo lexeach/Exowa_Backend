@@ -60,28 +60,30 @@ const searchYoutubeResources = async (searchQueries = []) => {
 
         return items.map(item => ({
 
-            title:
-                item.snippet.title,
+    youtubeId:
+        item.id.videoId,
 
-            description:
-                item.snippet.description,
+    title:
+        item.snippet.title,
 
-            channel:
-                item.snippet.channelTitle,
+    description:
+        item.snippet.description,
 
-            thumbnail:
-                item.snippet.thumbnails?.high?.url ||
+    channel:
+        item.snippet.channelTitle,
 
-                item.snippet.thumbnails?.medium?.url ||
+    thumbnail:
+        item.snippet.thumbnails?.high?.url ||
+        item.snippet.thumbnails?.medium?.url ||
+        item.snippet.thumbnails?.default?.url ||
+        "",
 
-                item.snippet.thumbnails?.default?.url ||
+    duration: "",
 
-                "",
+    url:
+        `https://www.youtube.com/watch?v=${item.id.videoId}`
 
-            url:
-                `https://www.youtube.com/watch?v=${item.id.videoId}`
-
-        }));
+}));
 
     }
 
