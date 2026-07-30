@@ -517,35 +517,21 @@ for (const pending of pendingQuestions) {
                         ? aiItem.keywords
                         : [],
 
-                youtubeSearch: [
-    `https://www.youtube.com/results?search_query=${encodeURIComponent(
-        [
-            paper.className || paper.class,
-            paper.subject,
-            aiItem.topic,
-            ...(Array.isArray(aiItem.keywords) ? aiItem.keywords : []),
-            paper.language
-        ]
-            .filter(Boolean)
-            .join(" ")
-    )}`
-],
+               ...buildSearchQueries({
 
-pdfSearch: [
-    `https://www.google.com/search?q=${encodeURIComponent(
-        [
-            paper.className || paper.class,
-            paper.subject,
-            aiItem.topic,
-            ...(Array.isArray(aiItem.keywords) ? aiItem.keywords : []),
-            "PDF",
-            paper.language
-        ]
-            .filter(Boolean)
-            .join(" ")
-    )}`
-],
+    topic: aiItem.topic,
 
+    className: paper.className || paper.class,
+
+    syllabus: paper.syllabus,
+
+    language: paper.language,
+
+    keywords: Array.isArray(aiItem.keywords)
+        ? aiItem.keywords
+        : []
+
+}),
                 videos: [],
 
                 pdfs: [],
@@ -753,27 +739,29 @@ exports.getLearningResources = async (req, res) => {
 
         }
 
-        return res.json({
+       const videos = await searchYoutubeResources(
+    learning.youtubeSearch || []
+);
 
-            success: true,
+const pdfs = await searchPdfResources(
+    learning.pdfSearch || []
+);
 
-            data: {
+return res.json({
 
-                ...learning.toObject(),
+    success: true,
 
-                videos: (learning.youtubeSearch || []).map(url => ({
-                    title: "Watch on YouTube",
-                    url
-                })),
+    data: {
 
-                pdfs: (learning.pdfSearch || []).map(url => ({
-                    title: "Open PDF Search",
-                    url
-                }))
+        ...learning.toObject(),
 
-            }
+        videos,
 
-        });
+        pdfs
+
+    }
+
+});
 
     }
 
