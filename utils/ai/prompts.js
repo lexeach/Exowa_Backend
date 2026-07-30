@@ -91,29 +91,37 @@ Return ONLY valid JSON.
         "",
         "",
         ""
+    ],
+
+    "videos":[
+        {
+            "title":"",
+            "url":"https://www.youtube.com/watch?v="
+        }
+    ],
+
+    "pdfs":[
+        {
+            "title":"",
+            "url":""
+        }
     ]
 }
+
+Rules
+
 Rules
 
 1. Do NOT explain the answer.
-
-2. Do NOT generate YouTube links.
-
-3. Do NOT generate PDF links.
-
-4. Generate ONE clear topic.
-
-5. Generate ONE concise learning objective.
-
-6. Generate EXACTLY 3 keywords or short search phrases.
-
-7. Keywords must describe the concept, not URLs.
-
-8. Do NOT generate YouTube queries.
-
-9. Do NOT generate PDF queries.
-
-10. Return ONLY JSON.
+2. Generate ONE clear topic.
+3. Generate ONE concise learning objective.
+4. Generate EXACTLY 3 keywords.
+5. Recommend 1 to 3 high-quality educational YouTube videos.
+6. Return the ACTUAL YouTube watch URL.
+7. Do NOT return YouTube search queries.
+8. Recommend 1 to 2 useful PDF resources.
+9. Return direct PDF URLs whenever possible.
+10. Return ONLY valid JSON.
 
 `;
 
@@ -155,32 +163,37 @@ Return ONLY valid JSON.
         ""
       ],
 
-      "youtubeSearch":[
-        "",
-        "",
-        ""
-      ],
+      "videos":[
+    {
+        "title":"",
+        "url":"https://www.youtube.com/watch?v="
+    }
+],
 
-      "pdfSearch":[
-        "",
-        ""
-      ]
+"pdfs":[
+    {
+        "title":"",
+        "url":""
+    }
+]
     }
   ]
 }
 
 Rules
 
-1. Process ONLY the questions supplied.
-2. Do NOT generate questions that are not supplied.
-3. Do NOT explain answers.
-4. Generate ONE topic.
-5. Generate ONE learning objective.
-6. Generate EXACTLY 3 keywords.
-7. Generate EXACTLY 3 YouTube search phrases.
-8. Generate EXACTLY 2 PDF search phrases.
-9. Do NOT generate URLs.
-10. Return ONLY JSON.
+Rules
+
+1. Process ONLY supplied questions.
+2. Do NOT explain answers.
+3. Generate ONE topic.
+4. Generate ONE learning objective.
+5. Generate EXACTLY 3 keywords.
+6. Recommend 1 to 3 educational YouTube videos.
+7. Return ACTUAL YouTube watch URLs.
+8. Never return YouTube search queries.
+9. Recommend 1 to 2 PDF resources with direct URLs.
+10. Return ONLY valid JSON.
 
 `;
 
