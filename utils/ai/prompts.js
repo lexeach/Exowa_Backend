@@ -108,7 +108,6 @@ Return ONLY valid JSON.
     ]
 }
 
-Rules
 
 Rules
 
@@ -180,7 +179,6 @@ Return ONLY valid JSON.
   ]
 }
 
-Rules
 
 Rules
 
