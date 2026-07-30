@@ -96,11 +96,23 @@ Return ONLY valid JSON.
     "videos":[
         {
             "title":"",
-            "url":"https://www.youtube.com/watch?v="
+            "url":"https://www.youtube.com/watch?v=VIDEO_ID"
+        },
+        {
+            "title":"",
+            "url":"https://www.youtube.com/watch?v=VIDEO_ID"
+        },
+        {
+            "title":"",
+            "url":"https://www.youtube.com/watch?v=VIDEO_ID"
         }
     ],
 
     "pdfs":[
+        {
+            "title":"",
+            "url":""
+        },
         {
             "title":"",
             "url":""
@@ -110,17 +122,21 @@ Return ONLY valid JSON.
 
 
 Rules
-
 1. Do NOT explain the answer.
 2. Generate ONE clear topic.
 3. Generate ONE concise learning objective.
 4. Generate EXACTLY 3 keywords.
-5. Recommend 1 to 3 high-quality educational YouTube videos.
-6. Return the ACTUAL YouTube watch URL.
-7. Do NOT return YouTube search queries.
-8. Recommend 1 to 2 useful PDF resources.
-9. Return direct PDF URLs whenever possible.
-10. Return ONLY valid JSON.
+5. Recommend EXACTLY 3 high-quality educational YouTube videos.
+6. Every video must contain:
+   - title
+   - actual YouTube watch URL
+7. Never return YouTube search queries.
+8. Recommend EXACTLY 2 useful PDF resources.
+9. Every PDF must contain:
+   - title
+   - direct PDF URL
+10. Prefer trusted educational resources like NCERT, Khan Academy, Physics Wallah, Magnet Brains, Vedantu, MIT OpenCourseWare, Neso Academy, etc.
+11. Return ONLY valid JSON.
 
 `;
 
@@ -162,18 +178,30 @@ Return ONLY valid JSON.
         ""
       ],
 
-      "videos":[
-    {
-        "title":"",
-        "url":"https://www.youtube.com/watch?v="
-    }
+     "videos":[
+{
+"title":"",
+"url":"https://www.youtube.com/watch?v=VIDEO_ID"
+},
+{
+"title":"",
+"url":"https://www.youtube.com/watch?v=VIDEO_ID"
+},
+{
+"title":"",
+"url":"https://www.youtube.com/watch?v=VIDEO_ID"
+}
 ],
 
 "pdfs":[
-    {
-        "title":"",
-        "url":""
-    }
+{
+"title":"",
+"url":""
+},
+{
+"title":"",
+"url":""
+}
 ]
     }
   ]
@@ -187,11 +215,17 @@ Rules
 3. Generate ONE topic.
 4. Generate ONE learning objective.
 5. Generate EXACTLY 3 keywords.
-6. Recommend 1 to 3 educational YouTube videos.
-7. Return ACTUAL YouTube watch URLs.
+6. Recommend EXACTLY 3 high-quality educational YouTube videos.
+7. Every video must contain:
+   - title
+   - actual YouTube watch URL
 8. Never return YouTube search queries.
-9. Recommend 1 to 2 PDF resources with direct URLs.
-10. Return ONLY valid JSON.
+9. Recommend EXACTLY 2 useful PDF resources.
+10. Every PDF must contain:
+    - title
+    - direct PDF URL
+11. Prefer trusted educational resources only.
+12. Return ONLY valid JSON.
 
 `;
 
