@@ -93,32 +93,6 @@ Return ONLY valid JSON.
         "",
         "",
         ""
-    ],
-
-    "videos":[
-        {
-            "title":"",
-            "url":"https://www.youtube.com/watch?v=VIDEO_ID"
-        },
-        {
-            "title":"",
-            "url":"https://www.youtube.com/watch?v=VIDEO_ID"
-        },
-        {
-            "title":"",
-            "url":"https://www.youtube.com/watch?v=VIDEO_ID"
-        }
-    ],
-
-    "pdfs":[
-        {
-            "title":"",
-            "url":""
-        },
-        {
-            "title":"",
-            "url":""
-        }
     ]
 }
 
@@ -128,17 +102,11 @@ Rules
 2. Generate ONE clear topic.
 3. Generate ONE concise learning objective.
 4. Generate EXACTLY 3 keywords.
-5. Recommend EXACTLY 3 high-quality educational YouTube videos.
-6. Every video must contain:
-   - title
-   - actual YouTube watch URL
-7. Never return YouTube search queries.
-8. Recommend EXACTLY 2 useful PDF resources.
-9. Every PDF must contain:
-   - title
-   - direct PDF URL
-10. Prefer trusted educational resources like NCERT, Khan Academy, Physics Wallah, Magnet Brains, Vedantu, MIT OpenCourseWare, Neso Academy, etc.
-11. Return ONLY valid JSON.
+5. Keywords should be short, specific and suitable for searching educational content.
+6. Do NOT return YouTube links.
+7. Do NOT return PDF links.
+8. Do NOT return search queries.
+9. Return ONLY valid JSON.
 
 `;
 
@@ -178,37 +146,10 @@ Return ONLY valid JSON.
         "",
         "",
         ""
-      ],
-
-     "videos":[
-{
-"title":"",
-"url":"https://www.youtube.com/watch?v=VIDEO_ID"
-},
-{
-"title":"",
-"url":"https://www.youtube.com/watch?v=VIDEO_ID"
-},
-{
-"title":"",
-"url":"https://www.youtube.com/watch?v=VIDEO_ID"
-}
-],
-
-"pdfs":[
-{
-"title":"",
-"url":""
-},
-{
-"title":"",
-"url":""
-}
-]
+      ]
     }
   ]
 }
-
 
 Rules
 
@@ -217,18 +158,11 @@ Rules
 3. Generate ONE topic.
 4. Generate ONE learning objective.
 5. Generate EXACTLY 3 keywords.
-6. Recommend EXACTLY 3 high-quality educational YouTube videos.
-7. Every video must contain:
-   - title
-   - actual YouTube watch URL
-8. Never return YouTube search queries.
-9. Recommend EXACTLY 2 useful PDF resources.
-10. Every PDF must contain:
-    - title
-    - direct PDF URL
-11. Prefer trusted educational resources only.
-12. Return ONLY valid JSON.
-
+6. Keywords should be short, meaningful and useful for educational search.
+7. Do NOT return YouTube URLs.
+8. Do NOT return PDF URLs.
+9. Do NOT return search queries.
+10. Return ONLY valid JSON.
 `;
 
 };
