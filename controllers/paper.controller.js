@@ -491,18 +491,11 @@ for (const pending of pendingQuestions) {
         );
 
         console.log(
-            "Youtube Queries :",
-            Array.isArray(aiItem.youtubeSearch)
-                ? aiItem.youtubeSearch.length
-                : 0
-        );
-
-        console.log(
-            "PDF Queries :",
-            Array.isArray(aiItem.pdfSearch)
-                ? aiItem.pdfSearch.length
-                : 0
-        );
+    "Keywords :",
+    Array.isArray(aiItem.keywords)
+        ? aiItem.keywords
+        : []
+);
 
         const learningDoc =
             await LearningVerification.create({
@@ -524,15 +517,34 @@ for (const pending of pendingQuestions) {
                         ? aiItem.keywords
                         : [],
 
-                youtubeSearch:
-                    Array.isArray(aiItem.youtubeSearch)
-                        ? aiItem.youtubeSearch
-                        : [],
+                youtubeSearch: [
+    `https://www.youtube.com/results?search_query=${encodeURIComponent(
+        [
+            paper.className || paper.class,
+            paper.subject,
+            aiItem.topic,
+            ...(Array.isArray(aiItem.keywords) ? aiItem.keywords : []),
+            paper.language
+        ]
+            .filter(Boolean)
+            .join(" ")
+    )}`
+],
 
-                pdfSearch:
-                    Array.isArray(aiItem.pdfSearch)
-                        ? aiItem.pdfSearch
-                        : [],
+pdfSearch: [
+    `https://www.google.com/search?q=${encodeURIComponent(
+        [
+            paper.className || paper.class,
+            paper.subject,
+            aiItem.topic,
+            ...(Array.isArray(aiItem.keywords) ? aiItem.keywords : []),
+            "PDF",
+            paper.language
+        ]
+            .filter(Boolean)
+            .join(" ")
+    )}`
+],
 
                 videos: [],
 
