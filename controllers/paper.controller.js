@@ -753,84 +753,45 @@ exports.getLearningResources = async (req, res) => {
 
         }
 
-        //------------------------------------------------
-        // Already Cached
-        //------------------------------------------------
-
-        if (
-            learning.videos.length > 0 ||
-            learning.pdfs.length > 0
-        ) {
-
-            return res.json({
-
-                success: true,
-
-                data: learning
-
-            });
-
-        }
-
-        //------------------------------------------------
-        // Build Search Queries
-        //------------------------------------------------
-
-       const paper = await Paper.findById(learning.paper)
-    .select("className class syllabus language");
-
-const {
-
-    youtubeSearch,
-
-    pdfSearch,
-
-} = buildSearchQueries({
-
-    topic: learning.topic,
-
-    className:
-        paper?.className ||
-        paper?.class ||
-        "",
-
-    syllabus:
-        paper?.syllabus || "",
-
-    language:
-        paper?.language || "English",
-
-});
-
-       //------------------------------------------------
-// Search Resources
-//------------------------------------------------
-
-const [videos, pdfs] = await Promise.all([
-    searchYoutubeResources(youtubeSearch),
-    searchPdfResources(pdfSearch),
-]);
-//------------------------------------------------
-// Cache
-//------------------------------------------------
-
-learning.videos = videos;
-
-learning.pdfs = pdfs;
-        await learning.save();
-
-        //------------------------------------------------
-        // Response
-        //------------------------------------------------
-
         return res.json({
 
             success: true,
 
-            data: learning
+            data: {
+
+                ...learning.toObject(),
+
+                videos: (learning.youtubeSearch || []).map(url => ({
+                    title: "Watch on YouTube",
+                    url
+                })),
+
+                pdfs: (learning.pdfSearch || []).map(url => ({
+                    title: "Open PDF Search",
+                    url
+                }))
+
+            }
 
         });
 
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        return res.status(500).json({
+
+            success: false,
+
+            message: error.message
+
+        });
+
+    }
+
+};
     }
 
     catch (error) {
