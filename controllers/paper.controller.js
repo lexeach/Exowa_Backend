@@ -792,24 +792,7 @@ exports.getLearningResources = async (req, res) => {
     }
 
 };
-    }
-
-    catch (error) {
-
-        console.error(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
-
+  
 exports.getAllLearningResources = async (req, res) => {
 
     try {
