@@ -266,14 +266,10 @@ console.log("==========================================\n");
 if (
 
     !parsedResponse.topic ||
-
     !parsedResponse.learningObjective ||
-
     !Array.isArray(parsedResponse.keywords) ||
-
-    !Array.isArray(parsedResponse.youtubeSearch) ||
-
-    !Array.isArray(parsedResponse.pdfSearch)
+    !Array.isArray(parsedResponse.videos) ||
+    !Array.isArray(parsedResponse.pdfs)
 
 ) {
 
@@ -322,15 +318,13 @@ if (
 parsedResponse.questions.forEach(q => {
 
     console.log({
-
-        questionNumber: q.questionNumber,
-        topic: q.topic,
-        learningObjective: q.learningObjective,
-        keywords: q.keywords,
-        youtubeSearch: q.youtubeSearch,
-        pdfSearch: q.pdfSearch
-
-    });
+    questionNumber: q.questionNumber,
+    topic: q.topic,
+    learningObjective: q.learningObjective,
+    keywords: q.keywords,
+    videos: q.videos,
+    pdfs: q.pdfs
+});
 
 });
 
@@ -342,8 +336,8 @@ if (
             !question.topic ||
             !question.learningObjective ||
             !Array.isArray(question.keywords) ||
-            !Array.isArray(question.youtubeSearch) ||
-            !Array.isArray(question.pdfSearch)
+            !Array.isArray(question.videos) ||
+            !Array.isArray(question.pdfs)
     )
 
 ) 
