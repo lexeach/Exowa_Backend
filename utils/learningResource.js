@@ -24,7 +24,7 @@ const searchYoutubeResources = async (searchQueries = []) => {
     }));
 
 };
-};
+
 
 //=====================================================
 // Search PDF Notes
@@ -39,7 +39,7 @@ const searchPdfResources = async (searchQueries = []) => {
 
 };
 
-};
+
 
 //=====================================================
 // Generate Search Queries
@@ -76,7 +76,7 @@ const buildSearchQueries = ({
     };
 
 };
-};
+
 
 //=====================================================
 
