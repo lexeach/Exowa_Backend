@@ -541,24 +541,11 @@ const learningDoc =
                         ? aiItem.keywords
                         : [],
 
-               ...buildSearchQueries({
+              ...searchQueries,
 
-    topic: aiItem.topic,
+videos,
 
-    className: paper.className || paper.class,
-
-    syllabus: paper.syllabus,
-
-    language: paper.language,
-
-    keywords: Array.isArray(aiItem.keywords)
-        ? aiItem.keywords
-        : []
-
-}),
-                videos: [],
-
-                pdfs: [],
+pdfs,
 
                 questions: [],
 
