@@ -497,8 +497,32 @@ for (const pending of pendingQuestions) {
         : []
 );
 
-        const learningDoc =
-            await LearningVerification.create({
+        const searchQueries = buildSearchQueries({
+
+    topic: aiItem.topic,
+
+    className: paper.className || paper.class,
+
+    syllabus: paper.syllabus,
+
+    language: paper.language,
+
+    keywords: Array.isArray(aiItem.keywords)
+        ? aiItem.keywords
+        : []
+
+});
+
+const videos = await searchYoutubeResources(
+    searchQueries.youtubeSearch
+);
+
+const pdfs = await searchPdfResources(
+    searchQueries.pdfSearch
+);
+
+const learningDoc =
+    await LearningVerification.create({
 
                 paper: paper._id,
 
