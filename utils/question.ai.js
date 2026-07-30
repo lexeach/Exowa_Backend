@@ -267,9 +267,8 @@ if (
 
     !parsedResponse.topic ||
     !parsedResponse.learningObjective ||
-    !Array.isArray(parsedResponse.keywords) ||
-    !Array.isArray(parsedResponse.videos) ||
-    !Array.isArray(parsedResponse.pdfs)
+    !Array.isArray(parsedResponse.keywords)
+    
 
 ) {
 
@@ -321,9 +320,8 @@ parsedResponse.questions.forEach(q => {
     questionNumber: q.questionNumber,
     topic: q.topic,
     learningObjective: q.learningObjective,
-    keywords: q.keywords,
-    videos: q.videos,
-    pdfs: q.pdfs
+    keywords: q.keywords
+    
 });
 
 });
@@ -335,9 +333,8 @@ if (
             !question.questionNumber ||
             !question.topic ||
             !question.learningObjective ||
-            !Array.isArray(question.keywords) ||
-            !Array.isArray(question.videos) ||
-            !Array.isArray(question.pdfs)
+            !Array.isArray(question.keywords)
+            
     )
 
 ) 
