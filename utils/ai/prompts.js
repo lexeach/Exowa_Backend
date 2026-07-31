@@ -48,59 +48,41 @@ Rules
 `;
 };
 
-const buildExplanationPrompt = ({
-    questionData,
-    questionsList
+const buildQuestionPrompt = ({
+    className,
+    subject,
+    syllabus,
+    chapter_from,
+    language,
+    numberOfQuestions
 }) => {
-    // Agar single question diya ho toh use array me convert kar lo, 
-    // taaki ek hi logic dono (single aur bulk) par kaam kare.
-    const listToProcess = questionsList || [questionData];
-
     return `
-You are an expert education assistant. 
-Your task is to generate learning metadata and resources for the given questions.
+Generate exactly ${numberOfQuestions} multiple-choice questions for a ${subject} exam
+for class ${className} based on the ${syllabus} syllabus from chapter ${chapter_from}.
+Use ${language} language.
+Return ONLY a valid JSON array.
 
-CRITICAL WARNING: Do NOT invent or guess fake URLs. If a real URL is not known, leave the url field as an empty string ("").
-
-Subject: ${questionData.subject}
-Board: ${questionData.syllabus}
-Class: ${questionData.className}
-Chapter: ${questionData.chapter_from}
-Language: ${questionData.language}
-
-Questions to Process:
-${JSON.stringify(listToProcess, null, 2)}
-
-Return ONLY valid JSON in this exact structure:
-
-{
-  "questions": [
-    {
-      "questionNumber": 1,
-      "topic": "",
-      "learningObjective": "",
-      "keywords": ["", "", ""],
-      "videos": [
-        { "title": "", "url": "" },
-        { "title": "", "url": "" },
-        { "title": "", "url": "" }
-      ],
-      "pdfs": [
-        { "title": "", "url": "" },
-        { "title": "", "url": "" },
-        { "title": "", "url": "" }
-      ]
-    }
-  ]
-}
+[
+  {
+    "questionNumber": 1,
+    "question": "Question text here",
+    "choices": {
+      "A": "Option A text",
+      "B": "Option B text",
+      "C": "Option C text",
+      "D": "Option D text",
+      "E": "I don't know (translated into ${language})"
+    },
+    "correctAnswer": "A"
+  }
+]
 
 Rules:
-1. Do NOT explain the answers.
-2. Generate EXACTLY 3 keywords.
-3. Recommend EXACTLY 3 educational YouTube videos and EXACTLY 3 PDF documents.
-4. Never invent fake URLs (use "" if unavailable).
-5. Return ONLY valid JSON (no markdown).
+1. Generate exactly ${numberOfQuestions} questions.
+2. Every question must have A, B, C, D and E (Option E = "I don't know" in ${language}).
+3. Return ONLY valid JSON with no markdown and no extra text.
 `;
+
 };
 
 const buildVerificationPrompt = ({
