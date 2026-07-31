@@ -82,7 +82,7 @@ ${JSON.stringify(specificQuestion.choices, null, 2)}
 Correct Answer:
 ${specificQuestion.correctAnswer}
 
-Return ONLY valid JSON.
+RReturn ONLY valid JSON.
 
 {
     "topic":"",
@@ -93,20 +93,42 @@ Return ONLY valid JSON.
         "",
         "",
         ""
+    ],
+
+    "videos":[
+        {
+            "title":"",
+            "url":""
+        }
+    ],
+
+    "pdfs":[
+        {
+            "title":"",
+            "url":""
+        }
     ]
 }
 
-
 Rules
+
 1. Do NOT explain the answer.
 2. Generate ONE clear topic.
 3. Generate ONE concise learning objective.
 4. Generate EXACTLY 3 keywords.
-5. Keywords should be short, specific and suitable for searching educational content.
-6. Do NOT return YouTube links.
-7. Do NOT return PDF links.
-8. Do NOT return search queries.
-9. Return ONLY valid JSON.
+5. Recommend EXACTLY 5 educational YouTube videos.
+6. Recommend EXACTLY 5 educational PDF documents.
+7. Every video must contain:
+   - title
+   - complete YouTube URL
+8. Every PDF must contain:
+   - title
+   - direct PDF URL whenever available.
+9. Prefer NCERT, Government, University and trusted educational websites.
+10. If no reliable PDF is available return an empty array.
+11. If no reliable YouTube URL is available return an empty array.
+12. Never invent fake URLs.
+13. Return ONLY valid JSON.
 
 `;
 
@@ -146,6 +168,20 @@ Return ONLY valid JSON.
         "",
         "",
         ""
+      ],
+
+      "videos":[
+        {
+          "title":"",
+          "url":""
+        }
+      ],
+
+      "pdfs":[
+        {
+          "title":"",
+          "url":""
+        }
       ]
     }
   ]
@@ -158,11 +194,12 @@ Rules
 3. Generate ONE topic.
 4. Generate ONE learning objective.
 5. Generate EXACTLY 3 keywords.
-6. Keywords should be short, meaningful and useful for educational search.
-7. Do NOT return YouTube URLs.
-8. Do NOT return PDF URLs.
-9. Do NOT return search queries.
-10. Return ONLY valid JSON.
+6. Recommend EXACTLY 5 educational YouTube videos.
+7. Recommend EXACTLY 5 educational PDF documents.
+8. Prefer NCERT, Government and trusted educational websites.
+9. Never invent fake URLs.
+10. Return an empty array if reliable resources are unavailable.
+11. Return ONLY valid JSON.
 `;
 
 };
