@@ -91,13 +91,20 @@ if (!learning) {
         const aiQuestions =
     await generateVerificationQuestions({
 
-        originalQuestion: learning.originalQuestion,
+        originalQuestion:
+            learning.originalQuestion,
 
-        topic: learning.topic,
+        topic:
+            learning.topic,
 
-        learningObjective: learning.learningObjective,
+        learningObjective:
+            learning.learningObjective,
 
-        language: paper.language,
+        keywords:
+            learning.keywords || [],
+
+        language:
+            paper.language
 
     });
         if (!Array.isArray(aiQuestions)) {
@@ -158,7 +165,23 @@ if (!learning) {
     // Only regenerate if still pending
     verification.questions = questions;
 
-verification.learningContent = "";
+verification.learningContent =
+    learning.learningContent || "";
+
+verification.topic =
+    learning.topic || "";
+
+verification.learningObjective =
+    learning.learningObjective || "";
+
+verification.keywords =
+    learning.keywords || [];
+
+verification.videos =
+    learning.videos || [];
+
+verification.pdfs =
+    learning.pdfs || [];
 
 verification.totalQuestions = questions.length;
 
@@ -187,32 +210,50 @@ verification.status = "Pending";
         else {
 
             verification =
-                await LearningVerification.create({
+    await LearningVerification.create({
 
-                    paper: paperId,
+        paper: paperId,
 
-                    questionIndex:
-                        Number(questionNumber),
+        questionIndex:
+            Number(questionNumber),
 
-                    originalQuestion:
-                        paper.questions.find(
+        originalQuestion:
+            learning.originalQuestion,
 
-                            q =>
-                                Number(q.questionNumber) ===
-                                Number(questionNumber)
+        learningContent:
+            learning.learningContent || "",
 
-                        ),
+        topic:
+            learning.topic || "",
 
-                    learningContent: "",
+        learningObjective:
+            learning.learningObjective || "",
 
-                    questions,
+        keywords:
+            learning.keywords || [],
 
-                    totalQuestions:
-                        questions.length,
+        videos:
+            learning.videos || [],
 
-                    createdBy: userId,
+        pdfs:
+            learning.pdfs || [],
 
-                });
+        questions,
+
+        score: 0,
+
+        totalQuestions:
+            questions.length,
+
+        scorePercentage: 0,
+
+        status: "Pending",
+
+        attempts: 1,
+
+        createdBy: userId
+
+    });
 
         }
 
