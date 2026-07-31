@@ -50,82 +50,17 @@ Rules
 
 const buildExplanationPrompt = ({
     questionData,
-    specificQuestion
+    questionsList
 }) => {
+    // Agar single question diya ho toh use array me convert kar lo, 
+    // taaki ek hi logic dono (single aur bulk) par kaam kare.
+    const listToProcess = questionsList || [questionData];
 
-    if (specificQuestion) {
+    return `
+You are an expert education assistant. 
+Your task is to generate learning metadata and resources for the given questions.
 
-        return `
-You are an expert education assistant.
-
-Your job is NOT to explain the answer. Your job is to identify the learning topic and generate accurate learning metadata.
-
-CRITICAL WARNING ABOUT URLS: 
-Do NOT hallucinate or guess YouTube or PDF URLs. If you do not know a 100% verified, real, and working URL, you MUST leave the url field as an empty string (""). Never invent fake links.
-
-Subject: ${questionData.subject}
-Board: ${questionData.syllabus}
-Class: ${questionData.className}
-Chapter: ${questionData.chapter_from}
-Language: ${questionData.language}
-
-Question Number:
-${questionData.questionNumber}
-
-Question:
-${specificQuestion.question}
-
-Choices:
-${JSON.stringify(specificQuestion.choices, null, 2)}
-
-Correct Answer:
-${specificQuestion.correctAnswer}
-
-Return ONLY valid JSON matching this exact structure:
-
-{
-    "topic":"",
-    "learningObjective":"",
-    "keywords":[
-        "",
-        "",
-        ""
-    ],
-    "videos":[
-        {
-            "title":"",
-            "url":""
-        }
-    ],
-    "pdfs":[
-        {
-            "title":"",
-            "url":""
-        }
-    ]
-}
-
-Rules:
-1. Do NOT explain the answer.
-2. Generate ONE clear topic and ONE concise learning objective.
-3. Generate EXACTLY 3 keywords.
-4. If you cannot provide verified real URLs, return an empty array [] for videos and pdfs.
-5. Return ONLY valid JSON with no markdown formatting.
-`;
-
-    }
-
-//---------------------------------------------------------
-// BULK (ONLY WRONG QUESTIONS)
-//---------------------------------------------------------
-
-return `
-You are an expert education assistant.
-
-Your task is to generate learning metadata for ONLY the wrong questions provided.
-
-CRITICAL WARNING ABOUT URLS: 
-Do NOT hallucinate or guess YouTube or PDF URLs. If you do not have a real, working URL, leave the url field as an empty string ("").
+CRITICAL WARNING: Do NOT invent or guess fake URLs. If a real URL is not known, leave the url field as an empty string ("").
 
 Subject: ${questionData.subject}
 Board: ${questionData.syllabus}
@@ -133,49 +68,39 @@ Class: ${questionData.className}
 Chapter: ${questionData.chapter_from}
 Language: ${questionData.language}
 
-Wrong Questions:
-${JSON.stringify(questionData.questions, null, 2)}
+Questions to Process:
+${JSON.stringify(listToProcess, null, 2)}
 
-Return ONLY valid JSON matching this exact structure:
+Return ONLY valid JSON in this exact structure:
 
 {
-  "questions":[
+  "questions": [
     {
       "questionNumber": 1,
       "topic": "",
       "learningObjective": "",
-      "keywords": [
-        "",
-        "",
-        ""
-      ],
+      "keywords": ["", "", ""],
       "videos": [
-        {
-          "title": "",
-          "url": ""
-        }
+        { "title": "", "url": "" },
+        { "title": "", "url": "" },
+        { "title": "", "url": "" }
       ],
       "pdfs": [
-        {
-          "title": "",
-          "url": ""
-        }
+        { "title": "", "url": "" },
+        { "title": "", "url": "" },
+        { "title": "", "url": "" }
       ]
     }
   ]
 }
 
 Rules:
-1. Process ONLY supplied questions.
-2. Do NOT explain answers.
-3. Generate EXACTLY 3 keywords per question.
-4. If reliable URLs are unavailable, leave the url empty or return an empty array.
-5. Return ONLY valid JSON.
-6. Suggest 2 youtube video url for the topic
-7. Suggest 2 pdf url for the topic
+1. Do NOT explain the answers.
+2. Generate EXACTLY 3 keywords.
+3. Recommend EXACTLY 3 educational YouTube videos and EXACTLY 3 PDF documents.
+4. Never invent fake URLs (use "" if unavailable).
+5. Return ONLY valid JSON (no markdown).
 `;
-
-
 };
 
 const buildVerificationPrompt = ({
