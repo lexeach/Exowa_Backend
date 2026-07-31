@@ -71,7 +71,7 @@ ${JSON.stringify(listToProcess, null, 2)}
 
 Instructions:
 1. For each question, first determine the exact "topic" and "learning objective".
-2. Then, search your knowledge base for YouTube videos and PDF documents that directly teach that specific "learning objective".
+2. Recommend educational videos ONLY from trusted channels like "CrashCourse", "Khan Academy", "Amoeba Sisters", or "Bozeman Science" for the "topic" and "learning objective".
 
 Return ONLY valid JSON in this exact structure:
 
