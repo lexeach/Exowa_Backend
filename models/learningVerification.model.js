@@ -105,27 +105,28 @@ keywords: {
     type: [String],
     default: [],
 },
-youtubeSearch: {
-    type: [String],
-    default: [],
-},
-
-pdfSearch: {
-    type: [String],
-    default: [],
-},
 //====================================================
 // Learning Videos
 //====================================================
 
 videos: [
     {
+        title: {
+            type: String,
+            default: "",
+        },
+
+        url: {
+            type: String,
+            default: "",
+        },
+
         youtubeId: {
             type: String,
             default: "",
         },
 
-        title: {
+        thumbnail: {
             type: String,
             default: "",
         },
@@ -139,14 +140,8 @@ videos: [
             type: String,
             default: "",
         },
-
-        thumbnail: {
-            type: String,
-            default: "",
-        },
     },
 ],
-
 //====================================================
 // Learning PDFs
 //====================================================
