@@ -731,27 +731,11 @@ exports.getLearningResources = async (req, res) => {
 
         }
 
-       const videos = await searchYoutubeResources(
-    learning.youtubeSearch || []
-);
-
-const pdfs = await searchPdfResources(
-    learning.pdfSearch || []
-);
-
-return res.json({
+       return res.json({
 
     success: true,
 
-    data: {
-
-        ...learning.toObject(),
-
-        videos,
-
-        pdfs
-
-    }
+    data: learning
 
 });
 
