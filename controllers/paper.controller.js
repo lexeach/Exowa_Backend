@@ -30,9 +30,8 @@ const LEARNING_RESOURCE_PENDING_MESSAGE =
 
 
 const {
-    buildSearchQueries,
-    searchYoutubeResources,
-    searchPdfResources,
+    normalizeVideos,
+    normalizePdfs,
 } = require("../utils/learningResource");
 
 const generateLearningResourcesSequentially = async (
@@ -497,28 +496,12 @@ for (const pending of pendingQuestions) {
         : []
 );
 
-        const searchQueries = buildSearchQueries({
-
-    topic: aiItem.topic,
-
-    className: paper.className || paper.class,
-
-    syllabus: paper.syllabus,
-
-    language: paper.language,
-
-    keywords: Array.isArray(aiItem.keywords)
-        ? aiItem.keywords
-        : []
-
-});
-
-const videos = await searchYoutubeResources(
-    searchQueries.youtubeSearch
+  const videos = normalizeVideos(
+    aiItem.videos || []
 );
 
-const pdfs = await searchPdfResources(
-    searchQueries.pdfSearch
+const pdfs = normalizePdfs(
+    aiItem.pdfs || []
 );
 
 const learningDoc =
@@ -537,11 +520,9 @@ const learningDoc =
                     aiItem.learningObjective || "",
 
                 keywords:
-                    Array.isArray(aiItem.keywords)
-                        ? aiItem.keywords
-                        : [],
-
-              ...searchQueries,
+    Array.isArray(aiItem.keywords)
+        ? aiItem.keywords
+        : [],
 
 videos,
 
