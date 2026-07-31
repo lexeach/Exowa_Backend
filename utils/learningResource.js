@@ -1,214 +1,104 @@
-const axios = require("axios");
-
 //=====================================================
-// Configuration
-//=====================================================
-
-const YOUTUBE_API_KEY =
-    process.env.YOUTUBE_API_KEY || "";
-
-//=====================================================
-// Search YouTube Videos
+// Learning Resource Helper
+// Gemini already returns videos & pdfs.
+// No external search APIs are used.
 //=====================================================
 
-const searchYoutubeResources = async (searchQueries = []) => {
+const normalizeVideos = (videos = []) => {
 
-    try {
-
-        if (
-            !YOUTUBE_API_KEY ||
-            searchQueries.length === 0
-        ) {
-
-            return [];
-
-        }
-
-        const query = searchQueries[0];
-
-        const response = await axios.get(
-            "https://www.googleapis.com/youtube/v3/search",
-            {
-
-                params: {
-
-                    key: YOUTUBE_API_KEY,
-
-                    part: "snippet",
-
-                    q: query,
-
-                    type: "video",
-
-                    maxResults: 5,
-
-                    videoEmbeddable: true,
-
-                    safeSearch: "strict",
-
-                    relevanceLanguage:
-    query.includes("Hindi")
-        ? "hi"
-        : "en",
-
-                }
-
-            }
-        );
-
-        const items = response.data.items || [];
-
-        return items.map(item => ({
-
-    youtubeId:
-        item.id.videoId,
-
-    title:
-        item.snippet.title,
-
-    description:
-        item.snippet.description,
-
-    channel:
-        item.snippet.channelTitle,
-
-    thumbnail:
-        item.snippet.thumbnails?.high?.url ||
-        item.snippet.thumbnails?.medium?.url ||
-        item.snippet.thumbnails?.default?.url ||
-        "",
-
-    duration: "",
-
-    url:
-        `https://www.youtube.com/watch?v=${item.id.videoId}`
-
-}));
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "YouTube API Error:",
-            error.response?.data ||
-            error.message
-        );
-
+    if (!Array.isArray(videos)) {
         return [];
-
     }
+
+    return videos
+        .filter(video =>
+            video &&
+            typeof video.url === "string" &&
+            video.url.trim() !== ""
+        )
+        .map(video => ({
+
+            title:
+                video.title || "",
+
+            url:
+                video.url || "",
+
+            youtubeId:
+                extractYoutubeId(video.url),
+
+            thumbnail:
+                buildThumbnail(video.url),
+
+            channel:
+                video.channel || "",
+
+            duration:
+                video.duration || ""
+
+        }));
 
 };
 
-//=====================================================
-// Search PDF Notes
-//=====================================================
+const normalizePdfs = (pdfs = []) => {
 
-const searchPdfResources = async (searchQueries = []) => {
-
-    if (searchQueries.length === 0) {
-
+    if (!Array.isArray(pdfs)) {
         return [];
-
     }
 
-    const query = searchQueries[0];
+    return pdfs
+        .filter(pdf =>
+            pdf &&
+            typeof pdf.url === "string" &&
+            pdf.url.trim() !== ""
+        )
+        .map(pdf => ({
 
-try {
+            title:
+                pdf.title || "",
 
-    const response = await axios.get(
-        "https://www.googleapis.com/customsearch/v1",
-        {
-            params: {
-                key: process.env.GOOGLE_SEARCH_API_KEY,
-                cx: process.env.GOOGLE_SEARCH_ENGINE_ID,
-                q: `${query} filetype:pdf`,
-                num: 5,
-            },
-        }
-    );
+            url:
+                pdf.url || "",
 
-    const items = response.data.items || [];
+            source:
+                pdf.source || ""
 
-    return items.map((item) => ({
+        }));
 
-        title: item.title,
+};
 
-        url: item.link,
+function extractYoutubeId(url = "") {
 
-        source: item.displayLink,
+    if (!url) return "";
 
-        snippet: item.snippet,
+    const match =
+        url.match(
+            /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/i
+        );
 
-    }));
+    return match
+        ? match[1]
+        : "";
 
-} catch (error) {
-
-    console.error(
-        "PDF Search Error:",
-        error.response?.data || error.message
-    );
-
-    return [];
 }
 
-};
+function buildThumbnail(url = "") {
 
-//=====================================================
-// Generate Search Queries
-//=====================================================
+    const id =
+        extractYoutubeId(url);
 
-const buildSearchQueries = ({
-    topic,
-    className,
-    syllabus,
-    language,
-    keywords = []
-}) => {
+    if (!id) {
+        return "";
+    }
 
-    const searchText = [
+    return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
 
-        className ? `Class ${className}` : "",
-
-        topic,
-
-        ...keywords,
-
-        syllabus,
-
-        language,
-
-        "NCERT"
-
-    ]
-        .filter(Boolean)
-        .join(" ");
-
-    return {
-
-        youtubeSearch: [
-
-            searchText
-
-        ],
-
-        pdfSearch: [
-
-            searchText
-
-        ]
-
-    };
-
-};
+}
 
 module.exports = {
 
-    buildSearchQueries,
+    normalizeVideos,
 
-    searchYoutubeResources,
-
-    searchPdfResources
+    normalizePdfs
 
 };
