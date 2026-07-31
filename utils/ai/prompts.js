@@ -58,11 +58,10 @@ const buildExplanationPrompt = ({
         return `
 You are an expert education assistant.
 
-Your job is NOT to explain the answer.
+Your job is NOT to explain the answer. Your job is to identify the learning topic and generate accurate learning metadata.
 
-Your job is to identify the learning topic and generate search keywords that will help students learn the concept using YouTube videos and PDF notes.
-Recommend the most relevant and highest-quality learning resources that directly teach the concept required to answer the question correctly. 
-Do not recommend unrelated or advanced-level resources.
+CRITICAL WARNING ABOUT URLS: 
+Do NOT hallucinate or guess YouTube or PDF URLs. If you do not know a 100% verified, real, and working URL, you MUST leave the url field as an empty string (""). Never invent fake links.
 
 Subject: ${questionData.subject}
 Board: ${questionData.syllabus}
@@ -82,26 +81,22 @@ ${JSON.stringify(specificQuestion.choices, null, 2)}
 Correct Answer:
 ${specificQuestion.correctAnswer}
 
-RReturn ONLY valid JSON.
+Return ONLY valid JSON matching this exact structure:
 
 {
     "topic":"",
-
     "learningObjective":"",
-
     "keywords":[
         "",
         "",
         ""
     ],
-
     "videos":[
         {
             "title":"",
             "url":""
         }
     ],
-
     "pdfs":[
         {
             "title":"",
@@ -110,31 +105,17 @@ RReturn ONLY valid JSON.
     ]
 }
 
-Rules
-
+Rules:
 1. Do NOT explain the answer.
-2. Generate ONE clear topic.
-3. Generate ONE concise learning objective.
-4. Generate EXACTLY 3 keywords.
-5. Recommend EXACTLY 5 educational YouTube videos.
-6. Recommend EXACTLY 5 educational PDF documents.
-7. Every video must contain:
-   - title
-   - complete YouTube URL
-8. Every PDF must contain:
-   - title
-   - direct PDF URL whenever available.
-9. Prefer NCERT, Government, University and trusted educational websites.
-10. If no reliable PDF is available return an empty array.
-11. If no reliable YouTube URL is available return an empty array.
-12. Never invent fake URLs.
-13. Return ONLY valid JSON.
-
+2. Generate ONE clear topic and ONE concise learning objective.
+3. Generate EXACTLY 3 keywords.
+4. If you cannot provide verified real URLs, return an empty array [] for videos and pdfs.
+5. Return ONLY valid JSON with no markdown formatting.
 `;
 
     }
 
-   //---------------------------------------------------------
+//---------------------------------------------------------
 // BULK (ONLY WRONG QUESTIONS)
 //---------------------------------------------------------
 
@@ -143,6 +124,9 @@ You are an expert education assistant.
 
 Your task is to generate learning metadata for ONLY the wrong questions provided.
 
+CRITICAL WARNING ABOUT URLS: 
+Do NOT hallucinate or guess YouTube or PDF URLs. If you do not have a real, working URL, leave the url field as an empty string ("").
+
 Subject: ${questionData.subject}
 Board: ${questionData.syllabus}
 Class: ${questionData.className}
@@ -150,57 +134,47 @@ Chapter: ${questionData.chapter_from}
 Language: ${questionData.language}
 
 Wrong Questions:
-
 ${JSON.stringify(questionData.questions, null, 2)}
 
-Return ONLY valid JSON.
+Return ONLY valid JSON matching this exact structure:
 
 {
   "questions":[
     {
-      "questionNumber":1,
-
-      "topic":"",
-
-      "learningObjective":"",
-
-      "keywords":[
+      "questionNumber": 1,
+      "topic": "",
+      "learningObjective": "",
+      "keywords": [
         "",
         "",
         ""
       ],
-
-      "videos":[
+      "videos": [
         {
-          "title":"",
-          "url":""
+          "title": "",
+          "url": ""
         }
       ],
-
-      "pdfs":[
+      "pdfs": [
         {
-          "title":"",
-          "url":""
+          "title": "",
+          "url": ""
         }
       ]
     }
   ]
 }
 
-Rules
-
+Rules:
 1. Process ONLY supplied questions.
 2. Do NOT explain answers.
-3. Generate ONE topic.
-4. Generate ONE learning objective.
-5. Generate EXACTLY 3 keywords.
-6. Recommend EXACTLY 5 educational YouTube videos.
-7. Recommend EXACTLY 5 educational PDF documents.
-8. Prefer NCERT, Government and trusted educational websites.
-9. Never invent fake URLs.
-10. Return an empty array if reliable resources are unavailable.
-11. Return ONLY valid JSON.
+3. Generate EXACTLY 3 keywords per question.
+4. If reliable URLs are unavailable, leave the url empty or return an empty array.
+5. Return ONLY valid JSON.
+6. Suggest 2 youtube video url for the topic
+7. Suggest 2 pdf url for the topic
 `;
+
 
 };
 
