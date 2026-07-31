@@ -53,20 +53,24 @@ const buildExplanationPrompt = ({
     specificQuestion
 }) => {
 
-const questions = specificQuestion
-    ? [{
-        questionNumber: questionData.questionNumber,
-        question: specificQuestion.question,
-        choices: specificQuestion.choices,
-        correctAnswer: specificQuestion.correctAnswer
-    }]
-    : questionData.questions;
+    const questions = specificQuestion
+        ? [{
+            questionNumber:
+                specificQuestion.questionNumber ??
+                questionData.questionNumber ??
+                1,
+            question: specificQuestion.question,
+            choices: specificQuestion.choices,
+            correctAnswer: specificQuestion.correctAnswer
+        }]
+        : questionData.questions;
 
+    return `
 You are an expert education assistant.
 
-Your task is to generate learning metadata for every question supplied.
+Your task is to generate learning metadata for EVERY supplied question.
 
-Do NOT explain the answers.
+Do NOT explain the answer.
 
 Subject: ${questionData.subject}
 Board: ${questionData.syllabus}
@@ -81,27 +85,27 @@ ${JSON.stringify(questions, null, 2)}
 Return ONLY valid JSON.
 
 {
-  "questions":[
+  "questions": [
     {
-      "questionNumber":1,
+      "questionNumber": 1,
 
-      "topic":"",
+      "topic": "",
 
-      "learningObjective":"",
+      "learningObjective": "",
 
-      "keywords":[
+      "keywords": [
         "",
         "",
         ""
       ],
 
-      "videoSearchQueries":[
+      "videoSearchQueries": [
         "",
         "",
         ""
       ],
 
-      "pdfSearchQueries":[
+      "pdfSearchQueries": [
         "",
         "",
         ""
@@ -113,17 +117,20 @@ Return ONLY valid JSON.
 Rules
 
 1. Process EVERY supplied question.
-2. Do NOT explain the answer.
-3. Generate ONE topic.
-4. Generate ONE concise learning objective.
-5. Generate EXACTLY 3 keywords.
-6. Generate EXACTLY 3 YouTube search queries.
-7. Generate EXACTLY 3 PDF search queries.
-8. Never generate YouTube URLs.
-9. Never generate PDF URLs.
-10. Search queries must target high-quality educational resources.
-11. Prefer NCERT, Khan Academy, Physics Wallah, Magnet Brains, ExamFear, Government educational resources.
-12. Return ONLY valid JSON.
+2. Generate EXACTLY one object for each input question.
+3. Keep the output order exactly the same as the input.
+4. Do NOT change questionNumber.
+5. Generate ONE clear topic.
+6. Generate ONE concise learning objective.
+7. Generate EXACTLY 3 learning keywords.
+8. Generate EXACTLY 3 YouTube search queries.
+9. Generate EXACTLY 3 PDF search queries.
+10. Never generate YouTube URLs.
+11. Never generate PDF URLs.
+12. Search queries must be highly specific and suitable for finding the best educational resources.
+13. Prefer NCERT, Khan Academy, Physics Wallah, Magnet Brains, ExamFear, Government educational resources.
+14. Do NOT explain the answer.
+15. Return ONLY valid JSON.
 `;
 };
 
