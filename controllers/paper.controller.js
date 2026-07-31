@@ -30,10 +30,8 @@ const LEARNING_RESOURCE_PENDING_MESSAGE =
 
 
 const {
-    normalizeVideos,
-    normalizePdfs,
-} = require("../utils/learningResource");
-
+    searchLearningResources,
+} = require("../utils/searchResources");
 const generateLearningResourcesSequentially = async (
     paperData,
     questionNumbers = []
@@ -341,6 +339,27 @@ console.dir(
 );
 
 if (!Array.isArray(aiResponse.questions)) {
+	for (const item of aiResponse.questions) {
+
+    if (!Array.isArray(item.videoSearchQueries)) {
+
+        console.warn(
+            `Missing videoSearchQueries for Question ${item.questionNumber}`
+        );
+
+        item.videoSearchQueries = [];
+    }
+
+    if (!Array.isArray(item.pdfSearchQueries)) {
+
+        console.warn(
+            `Missing pdfSearchQueries for Question ${item.questionNumber}`
+        );
+
+        item.pdfSearchQueries = [];
+    }
+
+}
 
     console.error("\nquestions[] not found.");
 
@@ -495,14 +514,47 @@ for (const pending of pendingQuestions) {
         ? aiItem.keywords
         : []
 );
-
-  const videos = normalizeVideos(
-    aiItem.videos || []
+		console.log(
+    "Video Search Queries :",
+    Array.isArray(aiItem.videoSearchQueries)
+        ? aiItem.videoSearchQueries
+        : []
 );
 
-const pdfs = normalizePdfs(
-    aiItem.pdfs || []
+console.log(
+    "PDF Search Queries :",
+    Array.isArray(aiItem.pdfSearchQueries)
+        ? aiItem.pdfSearchQueries
+        : []
 );
+
+  const {
+    videos,
+    pdfs
+} = await searchLearningResources({
+
+    subject: paper.subject,
+
+    className:
+        paper.className || paper.class,
+
+    board:
+        paper.syllabus,
+
+    language:
+        paper.language,
+
+    videoQueries:
+        Array.isArray(aiItem.videoSearchQueries)
+            ? aiItem.videoSearchQueries
+            : [],
+
+    pdfQueries:
+        Array.isArray(aiItem.pdfSearchQueries)
+            ? aiItem.pdfSearchQueries
+            : []
+
+});
 
 const learningDoc =
     await LearningVerification.create({
