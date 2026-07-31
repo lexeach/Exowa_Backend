@@ -501,6 +501,13 @@ async function searchYoutube(videoQueries = []) {
                 `${query} site:youtube.com`
             );
 
+        console.log("\n==============================");
+console.log("GOOGLE RAW RESULTS");
+console.log("Query :", query);
+console.log("Total :", results.length);
+console.dir(results, { depth: null });
+console.log("==============================\n");
+        
         let added = 0;
 
         for (const item of results) {
