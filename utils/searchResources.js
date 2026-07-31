@@ -1,68 +1,87 @@
 const axios = require("axios");
 const cheerio = require("cheerio");
 
-//====================================================
-// Configuration
-//====================================================
-
-const GOOGLE_SEARCH_URL =
-    "https://www.google.com/search";
-
-const REQUEST_TIMEOUT = 15000;
+const GOOGLE_URL = "https://www.google.com/search";
 
 const USER_AGENT =
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0 Safari/537.36";
 
-//====================================================
-// Axios Instance
-//====================================================
+const REQUEST_TIMEOUT = 20000;
+
+const MAX_RETRY = 3;
+
+const REQUEST_DELAY = 1200;
 
 const client = axios.create({
-
     timeout: REQUEST_TIMEOUT,
-
     headers: {
-
         "User-Agent": USER_AGENT,
-
         "Accept":
             "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-
         "Accept-Language":
             "en-US,en;q=0.9",
-
-        "Cache-Control":
-            "no-cache"
-
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache"
+    },
+    validateStatus(status) {
+        return status >= 200 && status < 500;
     }
-
 });
 
-//====================================================
-// Sleep
-//====================================================
-
 function sleep(ms) {
-
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function log(message, value = "") {
+    console.log(
+        `[LearningResource] ${message}`,
+        value
+    );
+}
+
+function normalizeUrl(url = "") {
+
+    if (!url) return "";
+
+    try {
+
+        url = decodeURIComponent(url);
+
+    } catch {}
+
+    url = url.trim();
+
+    if (
+        url.startsWith("//")
+    ) {
+        url = "https:" + url;
+    }
+
+    return url;
 
 }
 
-//====================================================
-// Remove Duplicate Videos
-//====================================================
+function isCaptcha(html = "") {
 
-function removeDuplicateVideos(videos = []) {
+    html = html.toLowerCase();
+
+    return (
+        html.includes("our systems have detected unusual traffic") ||
+        html.includes("recaptcha") ||
+        html.includes("sorry...") ||
+        html.includes("/sorry/") ||
+        html.includes("captcha")
+    );
+
+}
+
+function removeDuplicates(list = []) {
 
     const map = new Map();
 
-    for (const item of videos) {
+    for (const item of list) {
 
-        if (!item.url) {
-
-            continue;
-
-        }
+        if (!item.url) continue;
 
         if (!map.has(item.url)) {
 
@@ -76,73 +95,287 @@ function removeDuplicateVideos(videos = []) {
 
 }
 
-//====================================================
-// Remove Duplicate PDFs
-//====================================================
-
-function removeDuplicatePdfs(pdfs = []) {
-
-    const map = new Map();
-
-    for (const item of pdfs) {
-
-        if (!item.url) {
-
-            continue;
-
-        }
-
-        if (!map.has(item.url)) {
-
-            map.set(item.url, item);
-
-        }
-
-    }
-
-    return Array.from(map.values());
-
-}
-
-//====================================================
-// Normalize Video
-//====================================================
-
-function normalizeVideo(item = {}) {
+function normalizeVideo(video = {}) {
 
     return {
 
         title:
-            item.title || "",
+            video.title || "",
 
         url:
-            item.url || "",
+            video.url || "",
 
         thumbnail:
-            item.thumbnail || "",
+            video.thumbnail || "",
 
         channel:
-            item.channel || ""
+            video.channel || ""
 
     };
 
 }
 
-//====================================================
-// Normalize PDF
-//====================================================
-
-function normalizePdf(item = {}) {
+function normalizePdf(pdf = {}) {
 
     return {
 
         title:
-            item.title || "",
+            pdf.title || "",
 
         url:
-            item.url || ""
+            pdf.url || ""
 
     };
+
+}
+
+async function requestGoogle(query) {
+
+    for (let attempt = 1; attempt <= MAX_RETRY; attempt++) {
+
+        try {
+
+            await sleep(
+                REQUEST_DELAY * attempt
+            );
+
+            log(
+                `Google Request (${attempt}/${MAX_RETRY})`,
+                query
+            );
+
+            const response =
+                await client.get(
+                    GOOGLE_URL,
+                    {
+                        params: {
+                            q: query,
+                            hl: "en"
+                        }
+                    }
+                );
+
+            const html =
+                response.data || "";
+
+            if (!html) {
+
+                throw new Error(
+                    "Empty response"
+                );
+
+            }
+
+            if (isCaptcha(html)) {
+
+                throw new Error(
+                    "Google CAPTCHA detected"
+                );
+
+            }
+
+            return html;
+
+        }
+
+        catch (error) {
+
+            log(
+                "Retry Reason",
+                error.message
+            );
+
+            if (
+                attempt === MAX_RETRY
+            ) {
+
+                return "";
+
+            }
+
+        }
+
+    }
+
+    return "";
+
+}
+
+
+//====================================================
+// Extract Google Search Results
+//====================================================
+
+function extractGoogleResults(html = "") {
+
+    const $ = cheerio.load(html);
+
+    const results = [];
+    const visited = new Set();
+
+    //--------------------------------------------------
+    // Helper
+    //--------------------------------------------------
+
+    function pushResult(title, url) {
+
+        url = normalizeUrl(url);
+
+        if (!url) return;
+
+        if (
+            url.includes("google.") ||
+            url.includes("/search?") ||
+            url.includes("/preferences") ||
+            url.includes("/setprefs") ||
+            url.includes("accounts.google")
+        ) {
+            return;
+        }
+
+        if (visited.has(url)) {
+            return;
+        }
+
+        visited.add(url);
+
+        results.push({
+            title: (title || url).trim(),
+            url
+        });
+
+    }
+
+    //--------------------------------------------------
+    // Layout 1
+    //--------------------------------------------------
+
+    $("a").each((_, element) => {
+
+        const href = $(element).attr("href");
+
+        if (!href) return;
+
+        if (!href.startsWith("/url?q=")) {
+            return;
+        }
+
+        let url =
+            href.replace("/url?q=", "");
+
+        const index =
+            url.indexOf("&");
+
+        if (index !== -1) {
+            url =
+                url.substring(0, index);
+        }
+
+        const title =
+            $(element).find("h3").text().trim() ||
+            $(element).text().trim();
+
+        pushResult(title, url);
+
+    });
+
+    //--------------------------------------------------
+    // Layout 2
+    //--------------------------------------------------
+
+    $("div.g").each((_, element) => {
+
+        const anchor =
+            $(element).find("a").first();
+
+        if (!anchor.length) {
+            return;
+        }
+
+        const href =
+            anchor.attr("href");
+
+        if (!href) {
+            return;
+        }
+
+        const title =
+            $(element)
+                .find("h3")
+                .first()
+                .text()
+                .trim();
+
+        pushResult(title, href);
+
+    });
+
+    //--------------------------------------------------
+    // Layout 3
+    //--------------------------------------------------
+
+    $("div.yuRUbf").each((_, element) => {
+
+        const anchor =
+            $(element)
+                .find("a")
+                .first();
+
+        if (!anchor.length) {
+            return;
+        }
+
+        pushResult(
+
+            anchor.text(),
+
+            anchor.attr("href")
+
+        );
+
+    });
+
+    //--------------------------------------------------
+    // Layout 4
+    //--------------------------------------------------
+
+    $("h3").each((_, element) => {
+
+        const anchor =
+            $(element)
+                .closest("a");
+
+        if (!anchor.length) {
+            return;
+        }
+
+        pushResult(
+
+            $(element).text(),
+
+            anchor.attr("href")
+
+        );
+
+    });
+
+    //--------------------------------------------------
+    // Layout 5
+    //--------------------------------------------------
+
+    $("a[href^='http']").each((_, element) => {
+
+        pushResult(
+
+            $(element).text(),
+
+            $(element).attr("href")
+
+        );
+
+    });
+
+    return removeDuplicates(results);
 
 }
 
@@ -152,165 +385,106 @@ function normalizePdf(item = {}) {
 
 async function searchGoogle(query = "") {
 
-    console.log("\n========================================");
-    console.log("GOOGLE SEARCH");
-    console.log("========================================");
-    console.log("Query :", query);
+    log("Google Search", query);
 
-    try {
+    const html =
+        await requestGoogle(query);
 
-        await sleep(800);
-
-        const response =
-            await client.get(
-                GOOGLE_SEARCH_URL,
-                {
-                    params: {
-                        q: query
-                    }
-                }
-            );
-
-        const html =
-            response.data || "";
-
-        const $ =
-            cheerio.load(html);
-
-        const results = [];
-
-        $("a").each((index, element) => {
-
-            const href =
-                $(element).attr("href");
-
-            if (!href) {
-
-                return;
-
-            }
-
-            //--------------------------------------------------
-            // Google redirects
-            //--------------------------------------------------
-
-            if (!href.startsWith("/url?q=")) {
-
-                return;
-
-            }
-
-            let url =
-                href.replace("/url?q=", "");
-
-            const ampIndex =
-                url.indexOf("&");
-
-            if (ampIndex !== -1) {
-
-                url =
-                    url.substring(0, ampIndex);
-
-            }
-
-            url =
-                decodeURIComponent(url);
-
-            //--------------------------------------------------
-            // Ignore unwanted links
-            //--------------------------------------------------
-
-            if (
-                url.includes("google.") ||
-                url.includes("/search?") ||
-                url.includes("/settings") ||
-                url.includes("accounts.google") ||
-                url.includes("support.google")
-            ) {
-
-                return;
-
-            }
-
-            //--------------------------------------------------
-            // Title
-            //--------------------------------------------------
-
-            let title =
-                $(element).text().trim();
-
-            if (!title) {
-
-                title =
-                    $(element)
-                        .find("h3")
-                        .text()
-                        .trim();
-
-            }
-
-            if (!title) {
-
-                title = url;
-
-            }
-
-            results.push({
-
-                title,
-
-                url
-
-            });
-
-        });
-
-        //--------------------------------------------------
-        // Remove duplicates
-        //--------------------------------------------------
-
-        const unique =
-            [];
-
-        const seen =
-            new Set();
-
-        for (const item of results) {
-
-            if (seen.has(item.url)) {
-
-                continue;
-
-            }
-
-            seen.add(item.url);
-
-            unique.push(item);
-
-        }
-
-        console.log(
-            "Google Results :",
-            unique.length
-        );
-
-        return unique;
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "Google Search Failed :",
-            error.message
-        );
+    if (!html) {
 
         return [];
 
     }
 
+    const results =
+        extractGoogleResults(html);
+
+    log(
+        "Google Results",
+        results.length
+    );
+
+    return results;
+
 }
 
+
+//====================================================
+// Extract YouTube Video Id
+//====================================================
+
+function extractYouTubeVideoId(url = "") {
+
+    try {
+
+        const parsedUrl = new URL(url);
+
+        //--------------------------------------------------
+        // youtube.com/watch?v=
+        //--------------------------------------------------
+
+        const videoId =
+            parsedUrl.searchParams.get("v");
+
+        if (videoId) {
+
+            return videoId;
+
+        }
+
+        //--------------------------------------------------
+        // youtu.be/
+        //--------------------------------------------------
+
+        if (
+            parsedUrl.hostname.includes("youtu.be")
+        ) {
+
+            return parsedUrl.pathname
+                .replace("/", "")
+                .trim();
+
+        }
+
+        //--------------------------------------------------
+        // youtube.com/shorts/
+        //--------------------------------------------------
+
+        if (
+            parsedUrl.pathname.startsWith("/shorts/")
+        ) {
+
+            return parsedUrl.pathname
+                .replace("/shorts/", "")
+                .split("/")[0];
+
+        }
+
+        //--------------------------------------------------
+        // youtube.com/embed/
+        //--------------------------------------------------
+
+        if (
+            parsedUrl.pathname.startsWith("/embed/")
+        ) {
+
+            return parsedUrl.pathname
+                .replace("/embed/", "")
+                .split("/")[0];
+
+        }
+
+    }
+
+    catch {
+
+        return "";
+
+    }
+
+    return "";
+
+}
 
 //====================================================
 // Search YouTube
@@ -318,15 +492,11 @@ async function searchGoogle(query = "") {
 
 async function searchYoutube(videoQueries = []) {
 
-    console.log("\n========================================");
-    console.log("YOUTUBE SEARCH");
-    console.log("========================================");
-
     const videos = [];
 
     for (const query of videoQueries) {
 
-        console.log("\nSearching :", query);
+        log("Searching YouTube", query);
 
         const results =
             await searchGoogle(
@@ -344,12 +514,15 @@ async function searchYoutube(videoQueries = []) {
             }
 
             //--------------------------------------------------
-            // Only youtube links
+            // Accept only YouTube URLs
             //--------------------------------------------------
 
             if (
+
                 !item.url.includes("youtube.com") &&
+
                 !item.url.includes("youtu.be")
+
             ) {
 
                 continue;
@@ -357,39 +530,13 @@ async function searchYoutube(videoQueries = []) {
             }
 
             //--------------------------------------------------
-            // Extract Video Id
+            // Extract Video ID
             //--------------------------------------------------
 
-            let videoId = "";
-
-            try {
-
-                const url =
-                    new URL(item.url);
-
-                if (
-                    url.hostname === "youtu.be"
-                ) {
-
-                    videoId =
-                        url.pathname.replace("/", "");
-
-                }
-
-                else {
-
-                    videoId =
-                        url.searchParams.get("v") || "";
-
-                }
-
-            }
-
-            catch {
-
-                continue;
-
-            }
+            const videoId =
+                extractYouTubeVideoId(
+                    item.url
+                );
 
             if (!videoId) {
 
@@ -402,21 +549,18 @@ async function searchYoutube(videoQueries = []) {
             //--------------------------------------------------
 
             const thumbnail =
-                `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
 
             //--------------------------------------------------
-            // Channel
+            // Channel (best effort)
             //--------------------------------------------------
 
             let channel = "";
 
             try {
 
-                const url =
-                    new URL(item.url);
-
                 channel =
-                    url.hostname;
+                    new URL(item.url).hostname;
 
             }
 
@@ -446,6 +590,10 @@ async function searchYoutube(videoQueries = []) {
 
             added++;
 
+            //--------------------------------------------------
+            // Maximum 3 per query
+            //--------------------------------------------------
+
             if (added >= 3) {
 
                 break;
@@ -456,15 +604,11 @@ async function searchYoutube(videoQueries = []) {
 
     }
 
-    //--------------------------------------------------
-    // Remove Duplicates
-    //--------------------------------------------------
-
     const uniqueVideos =
-        removeDuplicateVideos(videos);
+        removeDuplicates(videos);
 
-    console.log(
-        "Videos Found :",
+    log(
+        "Videos Found",
         uniqueVideos.length
     );
 
@@ -472,21 +616,18 @@ async function searchYoutube(videoQueries = []) {
 
 }
 
+
 //====================================================
-// Search PDF
+// Search PDFs
 //====================================================
 
 async function searchPdf(pdfQueries = []) {
-
-    console.log("\n========================================");
-    console.log("PDF SEARCH");
-    console.log("========================================");
 
     const pdfs = [];
 
     for (const query of pdfQueries) {
 
-        console.log("\nSearching :", query);
+        log("Searching PDF", query);
 
         const results =
             await searchGoogle(
@@ -503,14 +644,16 @@ async function searchPdf(pdfQueries = []) {
 
             }
 
+            const lowerUrl =
+                item.url.toLowerCase();
+
             //--------------------------------------------------
-            // Only PDF
+            // Accept only PDF URLs
             //--------------------------------------------------
 
             if (
-                !item.url
-                    .toLowerCase()
-                    .endsWith(".pdf")
+                !lowerUrl.endsWith(".pdf") &&
+                !lowerUrl.includes(".pdf?")
             ) {
 
                 continue;
@@ -521,11 +664,9 @@ async function searchPdf(pdfQueries = []) {
 
                 normalizePdf({
 
-                    title:
-                        item.title,
+                    title: item.title,
 
-                    url:
-                        item.url
+                    url: item.url
 
                 })
 
@@ -543,15 +684,11 @@ async function searchPdf(pdfQueries = []) {
 
     }
 
-    //--------------------------------------------------
-    // Remove Duplicate PDFs
-    //--------------------------------------------------
-
     const uniquePdfs =
-        removeDuplicatePdfs(pdfs);
+        removeDuplicates(pdfs);
 
-    console.log(
-        "PDFs Found :",
+    log(
+        "PDFs Found",
         uniquePdfs.length
     );
 
@@ -579,14 +716,59 @@ async function searchLearningResources({
 
 } = {}) {
 
-    console.log("\n=================================================");
-    console.log("SEARCH LEARNING RESOURCES");
-    console.log("=================================================");
+    log(
+        "=========================================="
+    );
 
-    console.log("Subject :", subject);
-    console.log("Class :", className);
-    console.log("Board :", board);
-    console.log("Language :", language);
+    log("Learning Resource Search Started");
+
+    log("Subject", subject);
+
+    log("Class", className);
+
+    log("Board", board);
+
+    log("Language", language);
+
+    //--------------------------------------------------
+    // Remove Empty Queries
+    //--------------------------------------------------
+
+    videoQueries =
+
+        Array.from(
+
+            new Set(
+
+                (videoQueries || [])
+
+                    .map(q => (q || "").trim())
+
+                    .filter(Boolean)
+
+            )
+
+        );
+
+    pdfQueries =
+
+        Array.from(
+
+            new Set(
+
+                (pdfQueries || [])
+
+                    .map(q => (q || "").trim())
+
+                    .filter(Boolean)
+
+            )
+
+        );
+
+    //--------------------------------------------------
+    // Search
+    //--------------------------------------------------
 
     const videos =
         await searchYoutube(videoQueries);
@@ -594,17 +776,11 @@ async function searchLearningResources({
     const pdfs =
         await searchPdf(pdfQueries);
 
-    console.log("\nSearch Completed");
+    log("Videos", videos.length);
 
-    console.log(
-        "Videos :",
-        videos.length
-    );
+    log("PDFs", pdfs.length);
 
-    console.log(
-        "PDFs :",
-        pdfs.length
-    );
+    log("Learning Resource Search Completed");
 
     return {
 
