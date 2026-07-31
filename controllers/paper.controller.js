@@ -339,6 +339,22 @@ console.dir(
 );
 
 if (!Array.isArray(aiResponse.questions)) {
+	
+    console.error("\nquestions[] not found.");
+
+    console.error("Received Object:");
+
+    console.dir(
+
+        aiResponse,
+
+        { depth: null }
+
+    );
+
+    return;
+
+}
 	for (const item of aiResponse.questions) {
 
     if (!Array.isArray(item.videoSearchQueries)) {
@@ -361,21 +377,6 @@ if (!Array.isArray(aiResponse.questions)) {
 
 }
 
-    console.error("\nquestions[] not found.");
-
-    console.error("Received Object:");
-
-    console.dir(
-
-        aiResponse,
-
-        { depth: null }
-
-    );
-
-    return;
-
-}
 
 console.log(
 
