@@ -50,15 +50,23 @@ Rules
 
 const buildExplanationPrompt = ({
     questionData,
-    questionsList
+    specificQuestion
 }) => {
-    const listToProcess = questionsList || [questionData];
 
-    return `
-You are an expert education assistant. 
-Your primary task is to analyze the wrong questions, identify their core learning objective, and suggest high-quality study resources based strictly on that learning objective.
+const questions = specificQuestion
+    ? [{
+        questionNumber: questionData.questionNumber,
+        question: specificQuestion.question,
+        choices: specificQuestion.choices,
+        correctAnswer: specificQuestion.correctAnswer
+    }]
+    : questionData.questions;
 
-CRITICAL WARNING: Do NOT invent or guess fake URLs. If a real, working URL is not known, leave the url field as an empty string ("").
+You are an expert education assistant.
+
+Your task is to generate learning metadata for every question supplied.
+
+Do NOT explain the answers.
 
 Subject: ${questionData.subject}
 Board: ${questionData.syllabus}
@@ -66,42 +74,56 @@ Class: ${questionData.className}
 Chapter: ${questionData.chapter_from}
 Language: ${questionData.language}
 
-Questions to Process:
-${JSON.stringify(listToProcess, null, 2)}
+Questions
 
-Instructions:
-1. For each question, first determine the exact "topic" and "learning objective".
-2. Recommend educational videos ONLY from trusted channels like "CrashCourse", "Khan Academy", "Amoeba Sisters", or "Bozeman Science" for the "topic" and "learning objective".
+${JSON.stringify(questions, null, 2)}
 
-Return ONLY valid JSON in this exact structure:
+Return ONLY valid JSON.
 
 {
-  "questions": [
+  "questions":[
     {
-      "questionNumber": 1,
-      "topic": "",
-      "learningObjective": "",
-      "keywords": ["", "", ""],
-      "videos": [
-        { "title": "", "url": "" },
-        { "title": "", "url": "" },
-        { "title": "", "url": "" }
+      "questionNumber":1,
+
+      "topic":"",
+
+      "learningObjective":"",
+
+      "keywords":[
+        "",
+        "",
+        ""
       ],
-      "pdfs": [
-        { "title": "", "url": "" },
-        { "title": "", "url": "" },
-        { "title": "", "url": "" }
+
+      "videoSearchQueries":[
+        "",
+        "",
+        ""
+      ],
+
+      "pdfSearchQueries":[
+        "",
+        "",
+        ""
       ]
     }
   ]
 }
 
-Rules:
-1. Do NOT explain the answers.
-2. Generate EXACTLY 3 keywords based on the learning objective.
-3. Recommend EXACTLY 3 educational YouTube videos and EXACTLY 3 PDF documents that match the learning objective.
-4. Never invent fake URLs (use "" if unavailable).
-5. Return ONLY valid JSON (no markdown).
+Rules
+
+1. Process EVERY supplied question.
+2. Do NOT explain the answer.
+3. Generate ONE topic.
+4. Generate ONE concise learning objective.
+5. Generate EXACTLY 3 keywords.
+6. Generate EXACTLY 3 YouTube search queries.
+7. Generate EXACTLY 3 PDF search queries.
+8. Never generate YouTube URLs.
+9. Never generate PDF URLs.
+10. Search queries must target high-quality educational resources.
+11. Prefer NCERT, Khan Academy, Physics Wallah, Magnet Brains, ExamFear, Government educational resources.
+12. Return ONLY valid JSON.
 `;
 };
 
