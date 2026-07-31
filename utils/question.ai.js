@@ -398,6 +398,7 @@ const generateVerificationQuestions = async ({
     originalQuestion,
     topic,
     learningObjective,
+    keywords = [],
     language
 }) => {
     const MAX_RETRIES = 3;
@@ -419,16 +420,23 @@ console.log(
 );
 
 console.log(
+    "Keywords :",
+    keywords
+);
+
+console.log(
     "Question :",
     originalQuestion?.question
 );
-const prompt = buildVerificationPrompt({
+    const prompt = buildVerificationPrompt({
 
     originalQuestion,
 
     topic,
 
     learningObjective,
+
+    keywords,
 
     language
 
