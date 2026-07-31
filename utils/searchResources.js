@@ -99,36 +99,34 @@ function normalizeVideo(video = {}) {
 
     return {
 
-        title:
-            video.title || "",
+        title: video.title || "",
 
-        url:
-            video.url || "",
+        url: video.url || "",
 
-        thumbnail:
-            video.thumbnail || "",
+        youtubeId: video.youtubeId || "",
 
-        channel:
-            video.channel || ""
+        thumbnail: video.thumbnail || "",
+
+        channel: video.channel || "",
+
+        duration: video.duration || ""
 
     };
 
 }
-
 function normalizePdf(pdf = {}) {
 
     return {
 
-        title:
-            pdf.title || "",
+        title: pdf.title || "",
 
-        url:
-            pdf.url || ""
+        url: pdf.url || "",
+
+        source: pdf.source || ""
 
     };
 
 }
-
 async function requestGoogle(query) {
 
     for (let attempt = 1; attempt <= MAX_RETRY; attempt++) {
@@ -574,18 +572,19 @@ async function searchYoutube(videoQueries = []) {
 
                 normalizeVideo({
 
-                    title:
-                        item.title,
+    title: item.title,
 
-                    url:
-                        item.url,
+    url: item.url,
 
-                    thumbnail,
+    youtubeId: videoId,
 
-                    channel
+    thumbnail,
 
-                })
+    channel,
 
+    duration: ""
+
+})
             );
 
             added++;
@@ -662,13 +661,21 @@ async function searchPdf(pdfQueries = []) {
 
             pdfs.push(
 
-                normalizePdf({
+               normalizePdf({
 
-                    title: item.title,
+    title: item.title,
 
-                    url: item.url
+    url: item.url,
 
-                })
+    source: (() => {
+        try {
+            return new URL(item.url).hostname;
+        } catch {
+            return "";
+        }
+    })()
+
+})
 
             );
 
@@ -770,12 +777,12 @@ async function searchLearningResources({
     // Search
     //--------------------------------------------------
 
-    const videos =
-        await searchYoutube(videoQueries);
-
-    const pdfs =
-        await searchPdf(pdfQueries);
-
+    const [videos, pdfs] =
+    await Promise.all([
+        searchYoutube(videoQueries),
+        searchPdf(pdfQueries)
+    ]);
+    
     log("Videos", videos.length);
 
     log("PDFs", pdfs.length);
