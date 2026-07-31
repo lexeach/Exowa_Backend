@@ -529,6 +529,20 @@ console.log(
         : []
 );
 
+
+		console.log("\n=======================================");
+console.log("SEARCH RESOURCE REQUEST");
+console.log("=======================================");
+
+console.log("Question :", questionNumber);
+
+console.log("Video Queries:");
+console.dir(aiItem.videoSearchQueries, { depth: null });
+
+console.log("PDF Queries:");
+console.dir(aiItem.pdfSearchQueries, { depth: null });
+
+console.log("=======================================\n");
   const {
     videos,
     pdfs
@@ -556,6 +570,21 @@ console.log(
             : []
 
 });
+
+		console.log("\n=======================================");
+console.log("SEARCH RESOURCE RESPONSE");
+console.log("=======================================");
+
+console.log("Videos Found :", videos.length);
+console.log("PDFs Found :", pdfs.length);
+
+console.log("Videos:");
+console.dir(videos, { depth: null });
+
+console.log("PDFs:");
+console.dir(pdfs, { depth: null });
+
+console.log("=======================================\n");
 
 const learningDoc =
     await LearningVerification.create({
