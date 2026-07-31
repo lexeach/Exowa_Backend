@@ -48,41 +48,61 @@ Rules
 `;
 };
 
-const buildQuestionPrompt = ({
-    className,
-    subject,
-    syllabus,
-    chapter_from,
-    language,
-    numberOfQuestions
+const buildExplanationPrompt = ({
+    questionData,
+    questionsList
 }) => {
-    return `
-Generate exactly ${numberOfQuestions} multiple-choice questions for a ${subject} exam
-for class ${className} based on the ${syllabus} syllabus from chapter ${chapter_from}.
-Use ${language} language.
-Return ONLY a valid JSON array.
+    const listToProcess = questionsList || [questionData];
 
-[
-  {
-    "questionNumber": 1,
-    "question": "Question text here",
-    "choices": {
-      "A": "Option A text",
-      "B": "Option B text",
-      "C": "Option C text",
-      "D": "Option D text",
-      "E": "I don't know (translated into ${language})"
-    },
-    "correctAnswer": "A"
-  }
-]
+    return `
+You are an expert education assistant. 
+Your primary task is to analyze the wrong questions, identify their core learning objective, and suggest high-quality study resources based strictly on that learning objective.
+
+CRITICAL WARNING: Do NOT invent or guess fake URLs. If a real, working URL is not known, leave the url field as an empty string ("").
+
+Subject: ${questionData.subject}
+Board: ${questionData.syllabus}
+Class: ${questionData.className}
+Chapter: ${questionData.chapter_from}
+Language: ${questionData.language}
+
+Questions to Process:
+${JSON.stringify(listToProcess, null, 2)}
+
+Instructions:
+1. For each question, first determine the exact "topic" and "learning objective".
+2. Then, search your knowledge base for YouTube videos and PDF documents that directly teach that specific "learning objective".
+
+Return ONLY valid JSON in this exact structure:
+
+{
+  "questions": [
+    {
+      "questionNumber": 1,
+      "topic": "",
+      "learningObjective": "",
+      "keywords": ["", "", ""],
+      "videos": [
+        { "title": "", "url": "" },
+        { "title": "", "url": "" },
+        { "title": "", "url": "" }
+      ],
+      "pdfs": [
+        { "title": "", "url": "" },
+        { "title": "", "url": "" },
+        { "title": "", "url": "" }
+      ]
+    }
+  ]
+}
 
 Rules:
-1. Generate exactly ${numberOfQuestions} questions.
-2. Every question must have A, B, C, D and E (Option E = "I don't know" in ${language}).
-3. Return ONLY valid JSON with no markdown and no extra text.
+1. Do NOT explain the answers.
+2. Generate EXACTLY 3 keywords based on the learning objective.
+3. Recommend EXACTLY 3 educational YouTube videos and EXACTLY 3 PDF documents that match the learning objective.
+4. Never invent fake URLs (use "" if unavailable).
+5. Return ONLY valid JSON (no markdown).
 `;
-
 };
 
 const buildVerificationPrompt = ({
