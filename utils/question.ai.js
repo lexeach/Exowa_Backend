@@ -263,12 +263,13 @@ console.log("==========================================\n");
 
             if (specificQuestion) {
 
-if (
+
+    if (
 
     !parsedResponse.topic ||
     !parsedResponse.learningObjective ||
-    !Array.isArray(parsedResponse.keywords)
-    
+    !Array.isArray(parsedResponse.keywords) ||
+    typeof parsedResponse.explanation !== "string"
 
 ) {
 
@@ -320,8 +321,9 @@ parsedResponse.questions.forEach(q => {
     questionNumber: q.questionNumber,
     topic: q.topic,
     learningObjective: q.learningObjective,
-    keywords: q.keywords
-    
+    keywords: q.keywords,
+    explanation:
+        q.explanation?.substring(0,100)
 });
 
 });
@@ -333,8 +335,9 @@ if (
             !question.questionNumber ||
             !question.topic ||
             !question.learningObjective ||
-            !Array.isArray(question.keywords)
-            
+            !Array.isArray(question.keywords) ||
+            typeof question.explanation !== "string"
+
     )
 
 ) 
