@@ -592,33 +592,64 @@ console.log("PDF Queries:");
 console.dir(aiItem.pdfSearchQueries, { depth: null });
 
 console.log("=======================================\n");
-  const {
-    videos,
-    pdfs
-} = await searchLearningResources({
 
-    subject: paper.subject,
+		//----------------------------------------------------
+// Learning Resource Provider
+//----------------------------------------------------
 
-    className:
-        paper.className || paper.class,
+let videos = [];
+let pdfs = [];
 
-    board:
-        paper.syllabus,
+try {
 
-    language:
-        paper.language,
+    const resources =
+        await searchLearningResources({
 
-    videoQueries:
-        Array.isArray(aiItem.videoSearchQueries)
-            ? aiItem.videoSearchQueries
-            : [],
+            subject: paper.subject,
 
-    pdfQueries:
-        Array.isArray(aiItem.pdfSearchQueries)
-            ? aiItem.pdfSearchQueries
-            : []
+            className:
+                paper.className || paper.class,
 
-});
+            board:
+                paper.syllabus,
+
+            language:
+                paper.language,
+
+            videoQueries:
+                Array.isArray(aiItem.videoSearchQueries)
+                    ? aiItem.videoSearchQueries
+                    : [],
+
+            pdfQueries:
+                Array.isArray(aiItem.pdfSearchQueries)
+                    ? aiItem.pdfSearchQueries
+                    : []
+
+        });
+
+    videos =
+        Array.isArray(resources?.videos)
+            ? resources.videos
+            : [];
+
+    pdfs =
+        Array.isArray(resources?.pdfs)
+            ? resources.pdfs
+            : [];
+
+}
+catch (error) {
+
+    console.error(
+        "Learning Provider Failed :",
+        error.message
+    );
+
+    videos = [];
+    pdfs = [];
+
+}
 
 		console.log("\n=======================================");
 console.log("SEARCH RESOURCE RESPONSE");
