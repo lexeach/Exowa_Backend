@@ -339,20 +339,49 @@ console.dir(
 );
 
 if (!Array.isArray(aiResponse.questions)) {
-	
+
     console.error("\nquestions[] not found.");
 
     console.error("Received Object:");
 
     console.dir(
-
         aiResponse,
-
         { depth: null }
-
     );
 
     return;
+
+}
+
+//=================================================
+// Validate Every AI Question
+//=================================================
+
+for (const item of aiResponse.questions) {
+
+    if (!item.topic) {
+        item.topic = "";
+    }
+
+    if (!item.learningObjective) {
+        item.learningObjective = "";
+    }
+
+    if (!Array.isArray(item.keywords)) {
+        item.keywords = [];
+    }
+
+    if (typeof item.explanation !== "string") {
+        item.explanation = "";
+    }
+
+    if (!Array.isArray(item.videoSearchQueries)) {
+        item.videoSearchQueries = [];
+    }
+
+    if (!Array.isArray(item.pdfSearchQueries)) {
+        item.pdfSearchQueries = [];
+    }
 
 }
 	for (const item of aiResponse.questions) {
