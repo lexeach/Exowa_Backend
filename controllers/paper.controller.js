@@ -882,18 +882,20 @@ exports.getAllLearningResources = async (req, res) => {
             .find({ paper: paperId })
             .sort({ questionIndex: 1 })
             .select(
-                "_id " +
-                "questionIndex " +
-                "topic " +
-                "learningObjective " +
-                "status " +
-                "score " +
-                "totalQuestions " +
-                "scorePercentage " +
-                "verifiedAt " +
-                "videos " +
-                "pdfs"
-            );
+    "_id " +
+    "questionIndex " +
+    "topic " +
+    "learningObjective " +
+    "status " +
+    "score " +
+    "totalQuestions " +
+    "scorePercentage " +
+    "verifiedAt " +
+    "videos " +
+    "pdfs " +
+    "videoSearchQuery " +
+    "pdfSearchQuery"
+);
 
         return res.status(200).json({
 
