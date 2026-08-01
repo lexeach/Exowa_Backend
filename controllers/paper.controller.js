@@ -410,13 +410,13 @@ if (typeof item.pdfSearchQuery !== "string") {
     );
 
     console.log(
-        "Video Queries :",
-        item.videoSearchQueries
+        "Video Query :",
+        item.videoSearchQuery
     );
 
     console.log(
-        "PDF Queries :",
-        item.pdfSearchQueries
+        "PDF Query :",
+        item.pdfSearchQuery
     );
 
 }
@@ -604,8 +604,8 @@ const pdfs = [];
 console.log("\n=======================================");
 console.log("FRONTEND SEARCH MODE");
 console.log("=======================================");
-console.log("Video Queries :", aiItem.videoSearchQueries);
-console.log("PDF Queries :", aiItem.pdfSearchQueries);
+console.log("Video Query :", aiItem.videoSearchQuery);
+console.log("PDF Query :", aiItem.pdfSearchQuery);
 console.log("=======================================\n");
 		//--------------------------------------------------
 // Future Provider Cache
