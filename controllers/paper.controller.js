@@ -607,10 +607,13 @@ const learningDoc =
                 learningObjective:
                     aiItem.learningObjective || "",
 
-                keywords:
+               keywords:
     Array.isArray(aiItem.keywords)
         ? aiItem.keywords
         : [],
+
+explanation:
+    aiItem.explanation || "",
 
 videos,
 
