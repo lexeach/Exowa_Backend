@@ -7,6 +7,10 @@ async function searchYouTubeVideos(query) {
         const url = `https://www.youtube.com/results?search_query=${encodedQuery}`;
 
         const response = await axios.get(url, {
+
+    timeout: 15000,
+
+    headers: {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'Accept-Language': 'en-US,en;q=0.9',
@@ -16,7 +20,9 @@ async function searchYouTubeVideos(query) {
         const html = response.data;
         
         // ytInitialData ko extract karne ke liye regex
-        const match = html.match(/var ytInitialData = ({.*?});<\/script>/);
+       const match = html.match(
+    /(?:var\s+)?ytInitialData\s*=\s*(\{.*?\});/s
+);
         if (!match) {
             throw new Error('ytInitialData not found on the page structure.');
         }
@@ -43,14 +49,14 @@ async function searchYouTubeVideos(query) {
                     videoId: videoData.videoId,
                     title: videoData.title?.runs?.[0]?.text || '',
                     duration: videoData.lengthText?.simpleText || 'N/A',
-                    thumbnail: videoData.thumbnail?.thumbnails?.[0]?.url || '',
+                    thumbnail: videoData.thumbnail?.thumbnails?.pop()?.url || "",
                     channelTitle: videoData.ownerText?.runs?.[0]?.text || '',
                     videoUrl: `https://www.youtube.com/watch?v=${videoData.videoId}`
                 });
             }
         }
 
-        return videos;
+       return videos.slice(0, 3);
     } catch (error) {
         console.error('Error parsing YouTube data:', error.message);
         return [];
