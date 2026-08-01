@@ -104,17 +104,9 @@ Return ONLY valid JSON.
 
       "explanation":"",
 
-      "videoSearchQueries":[
-        "",
-        "",
-        ""
-      ],
+      "videoSearchQuery":"",
 
-      "pdfSearchQueries":[
-        "",
-        "",
-        ""
-      ]
+      "pdfSearchQuery":""
     }
   ]
 }
@@ -131,12 +123,15 @@ Rules
 8. Explain the complete concept step by step.
 9. Include examples wherever helpful.
 10. Do NOT mention the correct option or correct answer directly.
-11. Generate EXACTLY 3 YouTube search queries.
-12. Generate EXACTLY 3 PDF search queries.
+11. Generate ONLY ONE highly optimized YouTube search query.
+12. Generate ONLY ONE highly optimized PDF search query.
 13. Never generate YouTube URLs.
 14. Never generate PDF URLs.
-15. Search queries should be highly relevant to the concept.
-16. Return ONLY valid JSON.`;
+15. The search query should contain:
+    Subject + Class + Chapter + Main Concept.
+16. The query should be optimized to return the best educational results.
+17. Return ONLY valid JSON.
+`;
 };
 
 const buildVerificationPrompt = ({
