@@ -373,13 +373,17 @@ for (const item of aiResponse.questions) {
         item.explanation = "";
     }
 
-    if (!Array.isArray(item.videoSearchQueries)) {
-        item.videoSearchQueries = [];
-    }
+    if (typeof item.videoSearchQuery !== "string") {
 
-    if (!Array.isArray(item.pdfSearchQueries)) {
-        item.pdfSearchQueries = [];
-    }
+    item.videoSearchQuery = "";
+
+}
+
+if (typeof item.pdfSearchQuery !== "string") {
+
+    item.pdfSearchQuery = "";
+
+}
 
 }
 	
@@ -562,19 +566,14 @@ console.log(
 );
 
 console.log(
-    "Video Search Queries :",
-    Array.isArray(aiItem.videoSearchQueries)
-        ? aiItem.videoSearchQueries
-        : []
+    "Video Search Query :",
+    aiItem.videoSearchQuery || ""
 );
 
 console.log(
-    "PDF Search Queries :",
-    Array.isArray(aiItem.pdfSearchQueries)
-        ? aiItem.pdfSearchQueries
-        : []
+    "PDF Search Query :",
+    aiItem.pdfSearchQuery || ""
 );
-
 
 		console.log("\n=======================================");
 console.log("FRONTEND SEARCH REQUEST");
@@ -582,11 +581,15 @@ console.log("=======================================");
 
 console.log("Question :", questionNumber);
 
-console.log("Video Queries:");
-console.dir(aiItem.videoSearchQueries, { depth: null });
+console.log(
+    "Video Query :",
+    aiItem.videoSearchQuery
+);
 
-console.log("PDF Queries:");
-console.dir(aiItem.pdfSearchQueries, { depth: null });
+console.log(
+    "PDF Query :",
+    aiItem.pdfSearchQuery
+);
 
 console.log("=======================================\n");
 
@@ -635,16 +638,11 @@ videos,
 
 pdfs,
 
-videoSearchQueries:
-    Array.isArray(aiItem.videoSearchQueries)
-        ? aiItem.videoSearchQueries
-        : [],
+videoSearchQuery:
+    aiItem.videoSearchQuery || "",
 
-pdfSearchQueries:
-    Array.isArray(aiItem.pdfSearchQueries)
-        ? aiItem.pdfSearchQueries
-        : [],
-
+pdfSearchQuery:
+    aiItem.pdfSearchQuery || "",
 questions: [],
 
                 totalQuestions: 0,
