@@ -509,13 +509,19 @@ for (const pending of pendingQuestions) {
                 : 0
         );
 
-        console.log(
+  console.log(
     "Keywords :",
     Array.isArray(aiItem.keywords)
         ? aiItem.keywords
         : []
 );
-		console.log(
+
+console.log(
+    "Explanation :",
+    aiItem.explanation || ""
+);
+
+console.log(
     "Video Search Queries :",
     Array.isArray(aiItem.videoSearchQueries)
         ? aiItem.videoSearchQueries
