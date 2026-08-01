@@ -386,23 +386,37 @@ for (const item of aiResponse.questions) {
 }
 	for (const item of aiResponse.questions) {
 
-    if (!Array.isArray(item.videoSearchQueries)) {
+   for (const item of aiResponse.questions) {
 
-        console.warn(
-            `Missing videoSearchQueries for Question ${item.questionNumber}`
-        );
+    console.log("\n--------------------------------");
 
-        item.videoSearchQueries = [];
-    }
+    console.log("Question :", item.questionNumber);
 
-    if (!Array.isArray(item.pdfSearchQueries)) {
+    console.log("Topic :", item.topic);
 
-        console.warn(
-            `Missing pdfSearchQueries for Question ${item.questionNumber}`
-        );
+    console.log("Learning Objective :", item.learningObjective);
 
-        item.pdfSearchQueries = [];
-    }
+    console.log(
+        "Keywords :",
+        item.keywords
+    );
+
+    console.log(
+        "Explanation :",
+        item.explanation
+            ? item.explanation.substring(0,150) + "..."
+            : ""
+    );
+
+    console.log(
+        "Video Queries :",
+        item.videoSearchQueries
+    );
+
+    console.log(
+        "PDF Queries :",
+        item.pdfSearchQueries
+    );
 
 }
 
