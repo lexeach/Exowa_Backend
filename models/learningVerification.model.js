@@ -129,7 +129,7 @@ videos: [
             default: "",
         },
 
-        youtubeId: {
+        videoId: {
             type: String,
             default: "",
         },
@@ -139,7 +139,7 @@ videos: [
             default: "",
         },
 
-        channel: {
+        channelTitle: {
             type: String,
             default: "",
         },
@@ -150,6 +150,18 @@ videos: [
         },
     },
 ],
+
+    //====================================================
+// YouTube Search Query
+//====================================================
+
+videoSearchQuery: {
+
+    type: String,
+
+    default: ""
+
+},
 //====================================================
 // Learning PDFs
 //====================================================
@@ -172,6 +184,18 @@ pdfs: [
         },
     },
 ],
+
+    //====================================================
+// PDF Search Query
+//====================================================
+
+pdfSearchQuery: {
+
+    type: String,
+
+    default: ""
+
+},
 
     // Generated Verification Questions
     questions: {
