@@ -655,8 +655,20 @@ catch (error) {
 console.log("SEARCH RESOURCE RESPONSE");
 console.log("=======================================");
 
-console.log("Videos Found :", videos.length);
-console.log("PDFs Found :", pdfs.length);
+console.log(
+    "Videos Cached :",
+    videos.length
+);
+
+console.log(
+    "PDFs Cached :",
+    pdfs.length
+);
+
+console.log(
+    "Explanation Length :",
+    (aiItem.explanation || "").length
+);
 
 console.log("Videos:");
 console.dir(videos, { depth: null });
