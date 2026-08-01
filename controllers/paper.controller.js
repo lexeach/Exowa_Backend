@@ -29,9 +29,7 @@ const LEARNING_RESOURCE_PENDING_MESSAGE =
     "Learning resources are being prepared. Please try again in a few moments.";
 
 
-const {
-    searchLearningResources,
-} = require("../utils/searchResources");
+//const {searchLearningResources,} = require("../utils/searchResources");
 const generateLearningResourcesSequentially = async (
     paperData,
     questionNumbers = []
@@ -593,104 +591,23 @@ console.dir(aiItem.pdfSearchQueries, { depth: null });
 console.log("=======================================\n");
 
 		//----------------------------------------------------
-// Learning Resource Provider
-//----------------------------------------------------
+//--------------------------------------------------
+// Frontend Search Architecture
+//--------------------------------------------------
 
-let videos = [];
-let pdfs = [];
+const videos = [];
+const pdfs = [];
 
-try {
-
-    
-			const resources =
-    typeof searchLearningResources === "function"
-        ? await searchLearningResources({
-
-            subject: paper.subject,
-
-            className:
-                paper.className || paper.class,
-
-            board:
-                paper.syllabus,
-
-            language:
-                paper.language,
-
-            videoQueries:
-                Array.isArray(aiItem.videoSearchQueries)
-                    ? aiItem.videoSearchQueries
-                    : [],
-
-            pdfQueries:
-                Array.isArray(aiItem.pdfSearchQueries)
-                    ? aiItem.pdfSearchQueries
-                    : []
-
-                })
-        : {
-              videos: [],
-              pdfs: [],
-          };
-
-    videos =
-        Array.isArray(resources?.videos)
-            ? resources.videos
-            : [];
-
-    pdfs =
-        Array.isArray(resources?.pdfs)
-            ? resources.pdfs
-            : [];
-
-}
-catch (error) {
-
-    console.error(
-        "Learning Provider Failed :",
-        error.message
-    );
-
-    videos = [];
-    pdfs = [];
-
-}
-
-		console.log("\n=======================================");
-console.log("SEARCH RESOURCE RESPONSE");
+console.log("\n=======================================");
+console.log("FRONTEND SEARCH MODE");
 console.log("=======================================");
-
-console.log(
-    "Videos Cached :",
-    videos.length
-);
-
-console.log(
-    "PDFs Cached :",
-    pdfs.length
-);
-
-console.log(
-    "Explanation Length :",
-    (aiItem.explanation || "").length
-);
-
-console.log("Videos:");
-console.dir(videos, { depth: null });
-
-console.log("PDFs:");
-console.dir(pdfs, { depth: null });
-
+console.log("Video Queries :", aiItem.videoSearchQueries);
+console.log("PDF Queries :", aiItem.pdfSearchQueries);
 console.log("=======================================\n");
-
 		//--------------------------------------------------
 // Future Provider Cache
 //--------------------------------------------------
 
-const learningResources = {
-    videos,
-    pdfs,
-};
 const learningDoc =
     await LearningVerification.create({
 
