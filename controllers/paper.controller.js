@@ -577,7 +577,7 @@ console.log(
 
 
 		console.log("\n=======================================");
-console.log("SEARCH RESOURCE REQUEST");
+console.log("FRONTEND SEARCH REQUEST");
 console.log("=======================================");
 
 console.log("Question :", questionNumber);
