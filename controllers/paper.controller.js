@@ -705,7 +705,17 @@ videos,
 
 pdfs,
 
-                questions: [],
+videoSearchQueries:
+    Array.isArray(aiItem.videoSearchQueries)
+        ? aiItem.videoSearchQueries
+        : [],
+
+pdfSearchQueries:
+    Array.isArray(aiItem.pdfSearchQueries)
+        ? aiItem.pdfSearchQueries
+        : [],
+
+questions: [],
 
                 totalQuestions: 0,
 
