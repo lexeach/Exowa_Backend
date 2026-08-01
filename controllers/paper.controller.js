@@ -384,8 +384,7 @@ for (const item of aiResponse.questions) {
     }
 
 }
-	for (const item of aiResponse.questions) {
-
+	
    for (const item of aiResponse.questions) {
 
     console.log("\n--------------------------------");
@@ -602,8 +601,10 @@ let pdfs = [];
 
 try {
 
-    const resources =
-        await searchLearningResources({
+    
+			const resources =
+    typeof searchLearningResources === "function"
+        ? await searchLearningResources({
 
             subject: paper.subject,
 
@@ -626,7 +627,11 @@ try {
                     ? aiItem.pdfSearchQueries
                     : []
 
-        });
+                })
+        : {
+              videos: [],
+              pdfs: [],
+          };
 
     videos =
         Array.isArray(resources?.videos)
@@ -678,6 +683,14 @@ console.dir(pdfs, { depth: null });
 
 console.log("=======================================\n");
 
+		//--------------------------------------------------
+// Future Provider Cache
+//--------------------------------------------------
+
+const learningResources = {
+    videos,
+    pdfs,
+};
 const learningDoc =
     await LearningVerification.create({
 
