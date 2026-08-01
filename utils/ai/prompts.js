@@ -82,30 +82,35 @@ Questions
 
 ${JSON.stringify(questions, null, 2)}
 
+Generate the explanation as a student-friendly learning note of approximately 250 to 400 words.
+Use simple language.
+Explain the concept instead of just explaining the answer.
+Do not reveal the correct option.
 Return ONLY valid JSON.
-
 {
-  "questions": [
+  "questions":[
     {
-      "questionNumber": 1,
+      "questionNumber":1,
 
-      "topic": "",
+      "topic":"",
 
-      "learningObjective": "",
+      "learningObjective":"",
 
-      "keywords": [
+      "keywords":[
         "",
         "",
         ""
       ],
 
-      "videoSearchQueries": [
+      "explanation":"",
+
+      "videoSearchQueries":[
         "",
         "",
         ""
       ],
 
-      "pdfSearchQueries": [
+      "pdfSearchQueries":[
         "",
         "",
         ""
@@ -117,21 +122,21 @@ Return ONLY valid JSON.
 Rules
 
 1. Process EVERY supplied question.
-2. Generate EXACTLY one object for each input question.
-3. Keep the output order exactly the same as the input.
-4. Do NOT change questionNumber.
-5. Generate ONE clear topic.
-6. Generate ONE concise learning objective.
-7. Generate EXACTLY 3 learning keywords.
-8. Generate EXACTLY 3 YouTube search queries.
-9. Generate EXACTLY 3 PDF search queries.
-10. Never generate YouTube URLs.
-11. Never generate PDF URLs.
-12. Search queries must be highly specific and suitable for finding the best educational resources.
-13. Prefer NCERT, Khan Academy, Physics Wallah, Magnet Brains, ExamFear, Government educational resources.
-14. Do NOT explain the answer.
-15. Return ONLY valid JSON.
-`;
+2. Generate ONE topic.
+3. Generate ONE concise learning objective.
+4. Generate EXACTLY 3 keywords.
+5. Generate ONE detailed explanation.
+6. The explanation should be written in simple ${questionData.language} language.
+7. The explanation should be easy enough for a Class ${questionData.className} student to understand.
+8. Explain the complete concept step by step.
+9. Include examples wherever helpful.
+10. Do NOT mention the correct option or correct answer directly.
+11. Generate EXACTLY 3 YouTube search queries.
+12. Generate EXACTLY 3 PDF search queries.
+13. Never generate YouTube URLs.
+14. Never generate PDF URLs.
+15. Search queries should be highly relevant to the concept.
+16. Return ONLY valid JSON.`;
 };
 
 const buildVerificationPrompt = ({
