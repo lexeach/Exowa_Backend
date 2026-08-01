@@ -13,6 +13,7 @@ const childRoutes = require("./routes/child.routes");
 const subjectRoutes = require("./routes/subject.routes");
 const syllabusRoutes = require("./routes/syllabus.routes");
 const learningVerificationRoutes = require("./routes/learningVerification.route");
+const youtubeRoutes = require("./routes/youtube.routes");
 
 const app = express();
 connectDB();
@@ -95,6 +96,7 @@ app.use("/api/children", childRoutes);
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/syllabuses", syllabusRoutes);
 app.use("/api/learning-verification",learningVerificationRoutes);
+app.use("/api/youtube", youtubeRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
