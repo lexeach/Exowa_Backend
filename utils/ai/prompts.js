@@ -191,7 +191,7 @@ Rules
       "B":"Option B",
       "C":"Option C",
       "D":"Option D",
-      "E":"I don't know"
+      //"E":"I don't know"
     },
     "correctAnswer":"A"
   }
