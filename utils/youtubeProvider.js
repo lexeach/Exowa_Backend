@@ -171,19 +171,6 @@ async function searchYouTubeVideos(query) {
             { depth: null }
         );
 
-       //--------------------------------------------------
-// Sort by Duration (Shortest First)
-//--------------------------------------------------
-
-videos.sort((a, b) => {
-
-    return (
-        durationToSeconds(a.duration) -
-        durationToSeconds(b.duration)
-    );
-
-});
-        
         return videos;
 
     }
