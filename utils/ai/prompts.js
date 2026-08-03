@@ -175,12 +175,11 @@ Rules
 3. Test the SAME concept.
 4. Use the provided topic, learning objective and keywords while generating questions.
 5. Difficulty should be similar.
-6. Every question must have options A, B, C, D and E.
-7. Option E must be "I don't know" translated into ${language}.
-8. Correct answer must be A/B/C/D/E.
-9. Return ONLY valid JSON.
-10. Do NOT return markdown.
-11. Do NOT return explanation.
+6. Every question must have options A, B, C and D.
+7. Correct answer must be A/B/C/D.
+8. Return ONLY valid JSON.
+9. Do NOT return markdown.
+10. Do NOT return explanation.
 
 [
   {
@@ -191,7 +190,6 @@ Rules
       "B":"Option B",
       "C":"Option C",
       "D":"Option D",
-      //"E":"I don't know"
     },
     "correctAnswer":"A"
   }
