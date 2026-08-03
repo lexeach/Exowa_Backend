@@ -83,35 +83,8 @@ Questions
 ${JSON.stringify(questions, null, 2)}
 
 {
-  "prompt": "Generate the explanation as a student-friendly learning note of approximately 250 to 400 words.
-  Use simple language. Explain the concept instead of just explaining the answer. 
-  Do not reveal the correct option. 
-  Return ONLY valid JSON.
-  \n{\n  \"questions\":[\n    {\n      
-  \"questionNumber\":1,\n      
-  \"topic\":\"\",\n      
-  \"learningObjective\":\"\",\n      
-  \"keywords\":[\n        
-  \"\",\n        \"\",\n        \"\"\n      ],\n      
-  \"explanation\":\"\",\n      
-  \"videoSearchQuery\":\"\",\n      
-  \"pdfSearchQuery\":\"\"\n    }\n  ]\n}\n\n
-  Rules\n1. Process EVERY supplied question.\n2. 
-  Generate ONE topic.\n3. 
-  Generate ONE concise learning objective.\n4. 
-  Generate EXACTLY 3 keywords.\n5. 
-  Generate ONE detailed explanation.\n6. 
-  The explanation should be written in simple language.\n7. 
-  The explanation should be easy enough for a Class student to understand.\n8. 
-  Explain the complete concept step by step.\n9. 
-  Include examples wherever helpful.\n10. 
-  Do NOT mention the correct option or correct answer directly.\n11. 
-  Generate ONLY ONE highly optimized YouTube search query that prioritizes top Indian educational channels (such as Physics Wallah, Magnet Brains, Khan Sir, or Vedantu) at the top of search results by appending prominent channel names and keywords.\n12. 
-  Generate ONLY ONE highly optimized PDF search query.\n13. 
-  Never generate YouTube URLs.\n14. Never generate PDF URLs.\n15. 
-  The search query should contain: Subject + Standard/Class + Chapter + Main Concept + Famous Indian educational channels (e.g., Physics Wallah, Magnet Brains).\n16. 
-  The query should be optimized to return the best educational results from top platforms.\n17. 
-  Return ONLY valid JSON."
+  "prompt": "Generate the explanation as a student-friendly learning note of approximately 250 to 400 words. Use simple language. Explain the concept instead of just explaining the answer. Do not reveal the correct option. Return ONLY valid JSON.\n{\n  \"questions\":[\n    {\n      \"questionNumber\":1,\n      \"topic\":\"\",\n      \"learningObjective\":\"\",\n      \"keywords\":[\n        \"\",\n        \"\",\n        \"\"\n      ],\n      \"explanation\":\"\",\n      \"videoSearchQuery\":\"\",\n      \"pdfSearchQuery\":\"\"\n    }\n  ]\n}\n\nRules\n1. Process EVERY supplied question.\n2. Generate ONE topic.\n3. Generate ONE concise learning objective.\n4. Generate EXACTLY 3 keywords.\n5. Generate ONE detailed explanation.\n6. The explanation should be written in simple language.\n7. The explanation should be easy enough for a Class student to understand.\n8. Explain the complete concept step by step.\n9. Include examples wherever helpful.\n10. Do NOT mention the correct option or correct answer directly.\n11. Generate ONLY ONE highly optimized YouTube search query that prioritizes top Indian educational channels (such as Physics Wallah, Magnet Brains, Khan Sir, or Vedantu) by including their names and keywords to favor concise video content.\n12. Generate ONLY ONE highly optimized PDF search query.\n13. Never generate YouTube URLs.\n14. Never generate PDF URLs.\n15. The search query should contain: Subject + Standard/Class + Chapter + Main Concept + Famous Indian educational channels.\n16. The query should be optimized to return short or specific educational video results where the video duration or format targets brief concept overviews (under 15 minutes).\n17. Ensure that any specified parameters or target video results for the search query favor content with a duration of no more than 15 minutes.\n18. Return ONLY valid JSON."
+}"
 }
 `;
 };
